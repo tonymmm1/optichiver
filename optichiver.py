@@ -1,9 +1,11 @@
 #!/usr/bin/env  python3
 
+import glob
 import shutil
 import subprocess
 import sys
 import os
+import PIL.Image
 
 debug = 1   #debug toggle
 
@@ -93,6 +95,19 @@ def file_sorter(input_path,output_path,debug,size):
         print("\nFiles copied to output")
         subprocess.run("ls -la " + output_path, shell=True)
         print("\n")
+
+
+#def file_sorter_photos(input_path,output_path,debug,size):
+#    extensions = ["jpg","png","bmp","jpeg","tif","tiff","nef"] #add more extensions as needed and or compile a larger list of image formats raw/compressed
+#    for extension in extensions:
+#        photos= glob.glob(output_path + '/**/*.' + extension, recursive=True)
+#   Image.open(path)._getexit()[36867]
+    
+
+#photos function #support for exif extraction
+#photo album/folder function
+#files function
+
     
 
 #size_input(size,debug)
