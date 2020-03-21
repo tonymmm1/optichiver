@@ -7,7 +7,11 @@ import sys
 import os
 import exifread
 import multiprocessing as mp
+import concurrent.futures as cf
+
 debug = 0   #debug toggle
+
+nproc = mp.cpu_count()
 
 #Empty Variable Declarations
 size = 0
@@ -103,8 +107,7 @@ def file_sorter(input_path,output_path,debug,size):
 def file_sorter_photos(input_path,output_path,debug,size):
     image_file_index = 1    #counts index of file within directory
     #implement multiprocess for folder index
-    pool = mp.Pool(mp.cpu_count())
-    for file in os.listdir(input_path)[index_min:index_max]
+    for file in os.listdir(input_path):
         if (debug == 1):
             print ("Input path:","\t",os.path.abspath(input_path))
         image_file_index +=1    #increments index of file by 1
@@ -150,28 +153,31 @@ def file_sorter_photos(input_path,output_path,debug,size):
         shutil.copy(image_path,image_file_day,follow_symlinks=False)
         return 
 
-def multiprocessing(input_path,output_path,debug):
-    nproc = mp.cpu_count()
-    pool = mp.Pool(nprocs)
-    input_path_length = len([name for name in os.listdir(input_path) if os.path.isfile(os.path.join(input_path, name))])
-    print (input_path_length)
-    files_per_thread = 0
-    files_per_thread_offset = 0
-    print (files_per_thread)
-    print (files_per_thread_offset)
+def multiprocessing(input_path,output_path,debug,nproc):
+    with cf.ThreadPoolExecutor(max_workers = nproc) as e:
+        e.map(file_sorter_photos)
+        print ("task is complete")
+#        e.submit(checksumming)
+#    pool = mp.Pool(nprocs)
+#    input_path_length = len([name for name in os.listdir(input_path) if os.path.isfile(os.path.join(input_path, name))])
+#    print (input_path_length)
+#    files_per_thread = 0
+#    files_per_thread_offset = 0
+#    print (files_per_thread)
+#    print (files_per_thread_offset)
 #    file_sorter_photos(input_path,output_path,debug,size)
 #    n(nprocs) [0:n1] [n2:n3-1] [n3:n4-1]
 #   [0 : task1(total/nproc)] [(total/nproc)+1: task2(total/nproc)]n
 #    count = 1
-    if (input_path_length % nproc == 0):
-        files_per_thread = input_path_length / nproc
-        for tasks in range (0,(nproc)):
+#    if (input_path_length % nproc == 0):
+#        files_per_thread = input_path_length / nproc
+#        for tasks in range (0,(nproc)):
 
-    else:
-        files_per_thread = input_path_length / (nproc - 1)
-        files_per_thread_offset = input_path_length % (nproc - 1)
-        for tasks in range (0,(nproc - 1)):
-
+#    else:
+#        files_per_thread = input_path_length / (nproc - 1)
+#        files_per_thread_offset = input_path_length % (nproc - 1)
+#        for tasks in range (0,(nproc - 1)):
+    
 
 #def file_checksumming(image_file,debug,input_path,output_path)
 #photos function #support for exif extraction
@@ -185,5 +191,6 @@ def multiprocessing(input_path,output_path,debug):
 #file_paths(input_path,output_path,debug)
 #free_space_checker(input_path,output_path,debug)
 #file_sorter_photos(input_path,output_path,debug,size)
-#multiprocessing(input_path,output_path,debug)
+if (nproc > 1):
+    multiprocessing(input_path,output_path,debug,nproc)
 
