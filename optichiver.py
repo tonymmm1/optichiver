@@ -14,26 +14,24 @@ debug = 0   #debug toggle
 #Empty Variable Declarations
 size = 0
 input_size = 0
-
-input_path = "/home/user1/temp/input"   #remove 
-output_path = "/home/user1/temp/output" #remove 
+input_path = ""
+output_path = ""
 
 #Static Variable Declarations
 checksum = hashlib.sha256()
 
 dvd_size=               4.7E9   #B   #input_size == 1
 dvd_double_size=        9.4E9   #B   #input_size == 2
-bluray_size=            25.0E9  #B   #input_size == 3
-bluray_double_size=     50.0E9  #B   #input_size == 4
-bluray_quad_size=       100.0E9 #B   #input_size == 5
+bluray_size=            25E9    #B   #input_size == 3
+bluray_double_size=     50E9    #B   #input_size == 4
+bluray_quad_size=       100E9   #B   #input_size == 5
 
-#uncomment
-#print ("Optichiver: Script for backing up to optical discs" + "\nEnsure there is enough disk space as this program will create file duplicates")
+print ("Optichiver: Script for backing up to optical discs" + "\nEnsure there is enough disk space as this program will create file duplicates")
 
 def size_input(size):
     while True:
         try:    
-            input_size = int(input("Select disk" + "\n1: DVD(4.7 GB)" + "\n2: DVD Double Layer(9.4 GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100 GB)" + "\ninput: "))
+            input_size = int(input("Select disk" + "\n1: DVD(4.7GB)" + "\n2: DVD Double Layer(9.4GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100GB)" + "\ninput: "))
         except ValueError:
             print ("\nInput was not valid")
             continue
@@ -57,7 +55,7 @@ def size_input(size):
     if (debug == 1):
          print ("Selected disk size was ",size,"B")
 
-def file_paths(input_path, output_path,debug):
+def file_paths(input_path,output_path,debug):
     input_path_temp = input("\nInput path: ")
     if (len(input_path_temp) > 0):
         if (debug == 1):
@@ -72,13 +70,13 @@ def file_paths(input_path, output_path,debug):
         if (debug == 1):
             print ("output_path length is: ", len(output_path_temp))
         output_path = output_path_temp
+        if not os.path.isdir(output_path):
+            os.mkdir(output_path)
     else:
         print ("Error input is incorrect")
         output_path_temp = input("\nOutput path: ")
 
 def free_space_checker(input_path,output_path,debug,input_size):
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
     for path,dirs,files in os.walk(input_path):
         for f in files:
             fp = os.path.join(path,f)
@@ -88,10 +86,10 @@ def free_space_checker(input_path,output_path,debug,input_size):
     if(debug == 1):
         print ("input:  ",input_path,"used:", "\t",input_size, "\tBytes")
         print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
+        return input_path,output_path
     if(output_free < input_size):
         sys.exit("\nERROR: Insufficient Space")
 
-#sorts files in single level directory ex: /images*.jpg
 def file_sorter_photos(input_path,output_path,debug,checksum,size):
     size = 1E9
     folder_size = 0
@@ -117,68 +115,61 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
                 print ("File month:","\t",image_date_month)
                 print ("File day:","\t",image_date_day)
             image_size = os.path.getsize(image_path)    #input image size
-            if (folder_size + image_size > size - 1E6):
+
+            if (folder_size + image_size > size - 1E7):
                 folder += 1
                 folder_name = "disk" + str(folder + 1)
                 output_folder = os.path.join(output_path,folder_name)
                 folder_size = 0
+
             folder_name = "disk" + str(folder)
             output_folder = os.path.join(output_path,folder_name)
+
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)                   
+            
             image_file_year = os.path.join(output_folder,image_date_year)         
             image_file_month = os.path.join(image_file_year,image_date_month)     
             image_file_day = os.path.join(image_file_month,image_date_day)        
                                                                              
-            if not os.path.isdir(output_path):  #remove                           
-                os.mkdir(output_path)           #remove                           
             if not os.path.isdir(image_file_year):                               
                 os.mkdir(image_file_year)                                        
             if not os.path.isdir(image_file_month):                              
                 os.mkdir(image_file_month)                                       
             if not os.path.isdir(image_file_day):                                
                 os.mkdir(image_file_day)
+            
             if(debug == 1):                                                      
                 print("\nOutput path variables:")                                
                 print("image file year: ", image_file_year)                      
                 print("image file month:", image_file_month)                     
-                print("image file day:  ", image_file_day)                       
+                print("image file day:  ", image_file_day)
             shutil.copy(image_path,image_file_day,follow_symlinks=False)
             folder_size += image_size
 
-#    print("image size sum:\t",image_size_sum,"Bytes") #remove or debug
-    
 def input_checksum(debug,input_path,checksum):
-    print ("\nInput Checksum Thread:")
-    for file in os.listdir(input_path):
-        input_image = os.path.join(input_path,file)
-        with open (input_image,'rb') as hash:
-            hash_data = hash.read()
-            checksum.update(hash_data)
-            with open('hashes.toml','a') as hashes:
-                hashes.write(toml.dumps({file: checksum.hexdigest()}))
-            if (debug == 1):
-                print("Input Checksum Thread:","input checksum")
-                print("Input Checksum Thread:","input path:\t\t",input_image)
-                print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")
+    if not os.path.exists('hashes.toml'):
+        print ("\nInput Checksum Thread:")
+    #    for file in os.listdir(input_path): 
+        for path,dirs,files in os.walk(input_path):
+            for file in files:
+                input_image = os.path.join(input_path,file)
+                with open (input_image,'rb') as hash:
+                    hash_data = hash.read()
+                    checksum.update(hash_data)
+                    with open('hashes.toml','a') as hashes:
+                        hashes.write(toml.dumps({file: checksum.hexdigest()}))
+                    if (debug == 1):
+                        print("Input Checksum Thread:","input checksum")
+                        print("Input Checksum Thread:","input path:\t\t",input_image)
+                        print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")
 
-#photos function #support for exif extraction
-#photo album/folder function
-#files function
-
-#if __name__ == "__main__":
-#    input_checksum_thread= threading.Thread(target=input_checksum, args=(debug,input_path,hashlib.sha256()))
-#    input_checksum_thread.start()
-
+size_input(size)
+file_paths(input_path,output_path,debug)
 free_space_checker(input_path,output_path,debug,input_size)
-file_sorter_photos(input_path,output_path,debug,checksum,size) #remove
-
-
-#size_input(size,debug)
-#file_paths(input_path,output_path,debug)
-#free_space_checker(input_path,output_path,debug)
-#if (nproc > 1):
-#    multiprocessing(input_path,output_path,debug,nproc)
-
+if __name__ == "__main__":
+    input_checksum_thread= threading.Thread(target=input_checksum, args=(debug,input_path,hashlib.sha256()))
+    input_checksum_thread.start()
+file_sorter_photos(input_path,output_path,debug,checksum,size) 
