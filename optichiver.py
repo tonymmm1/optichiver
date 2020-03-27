@@ -96,18 +96,6 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
     size = 1E9
     folder_size = 0
     folder = 1
-    input_size = 0
-    for path,dirs,files in os.walk(input_path):
-        for f in files:
-            fp = os.path.join(path,f)
-            input_size += os.path.getsize(fp)
-    output_size = input_size
-    if (output_size % size == 0):
-        folders = int(output_size / 100E7)
-    else:
-        folders = int(output_size / 100E7) + 1
-    print("folder_size:",folder_size)
-
     for file in os.listdir(input_path):
         if (debug == 1):
             print ("Input path:","\t",os.path.abspath(input_path))
@@ -130,57 +118,33 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
                 print ("File day:","\t",image_date_day)
             image_size = os.path.getsize(image_path)    #input image size
             if (folder_size + image_size > size):
+                folder += 1
                 folder_name = "disk" + str(folder + 1)
                 output_folder = os.path.join(output_path,folder_name)
-                if not os.path.isdir(output_folder):
-                    os.mkdir(output_folder)
-                if not os.path.isdir(output_folder):
-                    os.mkdir(output_folder)                   
-                image_file_year = os.path.join(output_folder,image_date_year)         
-                image_file_month = os.path.join(image_file_year,image_date_month)     
-                image_file_day = os.path.join(image_file_month,image_date_day)        
-                                                                                 
-                if not os.path.isdir(output_path):  #remove                           
-                    os.mkdir(output_path)           #remove                           
-                if not os.path.isdir(image_file_year):                               
-                    os.mkdir(image_file_year)                                        
-                if not os.path.isdir(image_file_month):                              
-                    os.mkdir(image_file_month)                                       
-                if not os.path.isdir(image_file_day):                                
-                    os.mkdir(image_file_day)
-                if(debug == 1):                                                      
-                    print("\nOutput path variables:")                                
-                    print("image file year: ", image_file_year)                      
-                    print("image file month:", image_file_month)                     
-                    print("image file day:  ", image_file_day)                       
-                shutil.copy(image_path,image_file_day,follow_symlinks=False)
-            else:
-                if (folder_size > size):
-                    folder_size - size
-                folder_name = "disk" + str(folder) 
-                output_folder = os.path.join(output_path,folder_name)
-                if not os.path.isdir(output_folder):
-                    os.mkdir(output_folder)
-                if not os.path.isdir(output_folder):
-                    os.mkdir(output_folder)                   
-                image_file_year = os.path.join(output_folder,image_date_year)
-                image_file_month = os.path.join(image_file_year,image_date_month)
-                image_file_day = os.path.join(image_file_month,image_date_day)
-                                                                            
-                if not os.path.isdir(output_path):  #remove                 
-                    os.mkdir(output_path)           #remove                 
-                if not os.path.isdir(image_file_year):                      
-                    os.mkdir(image_file_year)                               
-                if not os.path.isdir(image_file_month):                     
-                    os.mkdir(image_file_month)                              
-                if not os.path.isdir(image_file_day):                       
-                    os.mkdir(image_file_day)
-                if(debug == 1):                                             
-                    print("\nOutput path variables:")                       
-                    print("image file year: ", image_file_year)             
-                    print("image file month:", image_file_month)            
-                    print("image file day:  ", image_file_day)              
-                shutil.copy(image_path,image_file_day,follow_symlinks=False)
+#            folder_name = "disk" + str(folder)
+#            output_folder = os.path.join(output_path,folder_name)
+            if not os.path.isdir(output_folder):
+                os.mkdir(output_folder)
+            if not os.path.isdir(output_folder):
+                os.mkdir(output_folder)                   
+            image_file_year = os.path.join(output_folder,image_date_year)         
+            image_file_month = os.path.join(image_file_year,image_date_month)     
+            image_file_day = os.path.join(image_file_month,image_date_day)        
+                                                                             
+            if not os.path.isdir(output_path):  #remove                           
+                os.mkdir(output_path)           #remove                           
+            if not os.path.isdir(image_file_year):                               
+                os.mkdir(image_file_year)                                        
+            if not os.path.isdir(image_file_month):                              
+                os.mkdir(image_file_month)                                       
+            if not os.path.isdir(image_file_day):                                
+                os.mkdir(image_file_day)
+            if(debug == 1):                                                      
+                print("\nOutput path variables:")                                
+                print("image file year: ", image_file_year)                      
+                print("image file month:", image_file_month)                     
+                print("image file day:  ", image_file_day)                       
+#            shutil.copy(image_path,image_file_day,follow_symlinks=False)
             folder_size += image_size
 
 #    print("image size sum:\t",image_size_sum,"Bytes") #remove or debug
@@ -209,7 +173,6 @@ def input_checksum(debug,input_path,checksum):
 
 free_space_checker(input_path,output_path,debug,input_size)
 file_sorter_photos(input_path,output_path,debug,checksum,size) #remove
-
 
 
 #size_input(size,debug)
