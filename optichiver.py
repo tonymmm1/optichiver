@@ -28,7 +28,9 @@ bluray_quad_size=       100E9   #B   #input_size == 5
 
 print ("Optichiver: Script for backing up to optical discs" + "\nEnsure there is enough disk space as this program will create file duplicates")
 
-def size_input(size):
+def size_input():
+    global size
+    global debug
     while True:
         try:    
             input_size = int(input("Select disk" + "\n1: DVD(4.7GB)" + "\n2: DVD Double Layer(9.4GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100GB)" + "\ninput: "))
@@ -55,7 +57,10 @@ def size_input(size):
     if (debug == 1):
          print ("Selected disk size was ",size,"B")
 
-def file_paths(input_path,output_path,debug):
+def file_paths():
+    global input_path
+    global output_path
+    global debug
     input_path_temp = input("\nInput path: ")
     if (len(input_path_temp) > 0):
         if (debug == 1):
@@ -76,7 +81,11 @@ def file_paths(input_path,output_path,debug):
         print ("Error input is incorrect")
         output_path_temp = input("\nOutput path: ")
 
-def free_space_checker(input_path,output_path,debug,input_size):
+def free_space_checker():
+    global input_path
+    global output_path
+    global debug
+    global input_size
     for path,dirs,files in os.walk(input_path):
         for f in files:
             fp = os.path.join(path,f)
@@ -86,12 +95,15 @@ def free_space_checker(input_path,output_path,debug,input_size):
     if(debug == 1):
         print ("input:  ",input_path,"used:", "\t",input_size, "\tBytes")
         print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
-        return input_path,output_path
     if(output_free < input_size):
         sys.exit("\nERROR: Insufficient Space")
 
-def file_sorter_photos(input_path,output_path,debug,checksum,size):
-    size = 1E9
+def file_sorter_photos():
+    global input_path
+    global output_path
+    global debug
+    global checksum
+    global size
     folder_size = 0
     folder = 1
     for file in os.listdir(input_path):
@@ -149,7 +161,10 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
             shutil.copy(image_path,image_file_day,follow_symlinks=False)
             folder_size += image_size
 
-def input_checksum(debug,input_path,checksum):
+def input_checksum():
+    global debug
+    global input_path
+    global checksum
     if not os.path.exists('hashes.toml'):
         print ("\nInput Checksum Thread:")
     #    for file in os.listdir(input_path): 
@@ -166,10 +181,10 @@ def input_checksum(debug,input_path,checksum):
                         print("Input Checksum Thread:","input path:\t\t",input_image)
                         print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")
 
-size_input(size)
-file_paths(input_path,output_path,debug)
-free_space_checker(input_path,output_path,debug,input_size)
+size_input()
+file_paths()
+free_space_checker()
 if __name__ == "__main__":
-    input_checksum_thread= threading.Thread(target=input_checksum, args=(debug,input_path,hashlib.sha256()))
+    input_checksum_thread= threading.Thread(target=input_checksum, args=())
     input_checksum_thread.start()
-file_sorter_photos(input_path,output_path,debug,checksum,size) 
+file_sorter_photos() 
