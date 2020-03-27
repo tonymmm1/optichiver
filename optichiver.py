@@ -84,33 +84,29 @@ def free_space_checker(input_path,output_path,debug,input_size):
             fp = os.path.join(path,f)
             input_size += os.path.getsize(fp)
     print (input_size)
-#    for path,dirs,files in os.walk(output_path):
-#        for f in files:
-#            fp = os.path.join(path,f)
-#            output_size += os.path.getsize(fp)
     output_free = int(os.statvfs(output_path)[1] * os.statvfs(output_path)[7])
     if(debug == 1):
         print ("input:  ",input_path,"used:", "\t",input_size, "\tBytes")
         print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
     if(output_free < input_size):
-        #print("\nSpace needed: ", "\t\t\t\t",-1* (output_size - input_size), "\tBytes")
         sys.exit("\nERROR: Insufficient Space")
 
 #sorts files in single level directory ex: /images*.jpg
 def file_sorter_photos(input_path,output_path,debug,checksum,size):
     size = 1E9
-    image_size_sum = 0
-#    input_size = 0
-#    for path,dirs,files in os.walk(input_path):
-#        for f in files:
-#            fp = os.path.join(path,f)
-#            input_size += os.path.getsize(fp)
-#    output_size = input_size
-#    if (output_size % size == 0):
-#        folder_size = int(output_size / 100E7)
-#    else:
-#        folder_size = int(output_size / 100E7) + 1
-#    print("folder_size:",folder_size)
+    folder_size = 0
+    folder = 1
+    input_size = 0
+    for path,dirs,files in os.walk(input_path):
+        for f in files:
+            fp = os.path.join(path,f)
+            input_size += os.path.getsize(fp)
+    output_size = input_size
+    if (output_size % size == 0):
+        folders = int(output_size / 100E7)
+    else:
+        folders = int(output_size / 100E7) + 1
+    print("folder_size:",folder_size)
 
     for file in os.listdir(input_path):
         if (debug == 1):
@@ -129,39 +125,21 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
             image_date_day = str(image_date)[8:10]
             if (debug == 1):
                 print ("File date:","\t",image_date)
-                print ("File year:","\t",image_date_year) #diskn(max of size)/#yearn/#monthn/#dayn
+                print ("File year:","\t",image_date_year) 
                 print ("File month:","\t",image_date_month)
                 print ("File day:","\t",image_date_day)
             image_size = os.path.getsize(image_path)    #input image size
-#            image_size_sum += image_size                #imput image size sum
-
-#            print("size:\t\t",image_size,"Bytes") # remove or debug
-
-# create amount of folders input_size divided/parameter size(1E9) each folder should be 1E9(1GB) 
-            if (folder_size + image_size < size):
-            
-            folder_size = folder_size + image_size
-            
-#            for folder in range(1,n):     #loops through amount of folders
-                folder_name = "disk" + str(folder)
+            if (folder_size + image_size > size):
+                folder_name = "disk" + str(folder + 1)
                 output_folder = os.path.join(output_path,folder_name)
                 if not os.path.isdir(output_folder):
                     os.mkdir(output_folder)
-#                for path,dirs,files in os.walk(output_folder):
-#                    for f in files:
-#                        folder_path = os.path.join(path,f)
-#                        folder_size += os.path.getsize(folder_path)
-
-                if (folder_size == 1): #single disk 
-                    folder = 1
-                    folder_name = "disk" + str(folder)
-                    output_folder = os.path.join(output_path,folder_name)
                 if not os.path.isdir(output_folder):
                     os.mkdir(output_folder)                   
                 image_file_year = os.path.join(output_folder,image_date_year)         
                 image_file_month = os.path.join(image_file_year,image_date_month)     
                 image_file_day = os.path.join(image_file_month,image_date_day)        
-                                                                                  
+                                                                                 
                 if not os.path.isdir(output_path):  #remove                           
                     os.mkdir(output_path)           #remove                           
                 if not os.path.isdir(image_file_year):                               
@@ -169,112 +147,43 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
                 if not os.path.isdir(image_file_month):                              
                     os.mkdir(image_file_month)                                       
                 if not os.path.isdir(image_file_day):                                
-                    os.mkdir(image_file_day)                                         
+                    os.mkdir(image_file_day)
                 if(debug == 1):                                                      
                     print("\nOutput path variables:")                                
                     print("image file year: ", image_file_year)                      
                     print("image file month:", image_file_month)                     
                     print("image file day:  ", image_file_day)                       
-                                                                          
-                shutil.copy(image_path,image_file_day,follow_symlinks=False)        
+                shutil.copy(image_path,image_file_day,follow_symlinks=False)
+            else:
+                if (folder_size > size):
+                    folder_size - size
+                folder_name = "disk" + str(folder) 
+                output_folder = os.path.join(output_path,folder_name)
+                if not os.path.isdir(output_folder):
+                    os.mkdir(output_folder)
+                if not os.path.isdir(output_folder):
+                    os.mkdir(output_folder)                   
+                image_file_year = os.path.join(output_folder,image_date_year)
+                image_file_month = os.path.join(image_file_year,image_date_month)
+                image_file_day = os.path.join(image_file_month,image_date_day)
+                                                                            
+                if not os.path.isdir(output_path):  #remove                 
+                    os.mkdir(output_path)           #remove                 
+                if not os.path.isdir(image_file_year):                      
+                    os.mkdir(image_file_year)                               
+                if not os.path.isdir(image_file_month):                     
+                    os.mkdir(image_file_month)                              
+                if not os.path.isdir(image_file_day):                       
+                    os.mkdir(image_file_day)
+                if(debug == 1):                                             
+                    print("\nOutput path variables:")                       
+                    print("image file year: ", image_file_year)             
+                    print("image file month:", image_file_month)            
+                    print("image file day:  ", image_file_day)              
+                shutil.copy(image_path,image_file_day,follow_symlinks=False)
+            folder_size += image_size
 
-                if(folder_size > 1):
-                    folder_name = "disk" + str(folder)
-                    output_folder = os.path.join(output_path,folder_name)
-                    if not os.path.isdir(output_folder):
-                        os.mkdir(output_folder)
-
-                    image_file_year = os.path.join(output_folder,image_date_year) 
-                    image_file_month = os.path.join(image_file_year,image_date_month)
-                    image_file_day = os.path.join(image_file_month,image_date_day)
-
-                    if not os.path.isdir(output_path):  #remove
-                        os.mkdir(output_path)           #remove
-                    if not os.path.isdir(image_file_year):
-                        os.mkdir(image_file_year)
-                    if not os.path.isdir(image_file_month):
-                        os.mkdir(image_file_month)
-                    if not os.path.isdir(image_file_day):
-                        os.mkdir(image_file_day)
-                    if(debug == 1):
-                        print("\nOutput path variables:")
-                        print("image file year: ", image_file_year)
-                        print("image file month:", image_file_month)
-                        print("image file day:  ", image_file_day)
-
-                    if (folder_size < size):
-                        shutil.copy(image_path,image_file_day,follow_symlinks=False)
-                                
 #    print("image size sum:\t",image_size_sum,"Bytes") #remove or debug
-
-
-
-#def disk_sorter(debug,output_path,size,unsorted):
-#
-#    size = 4.7E9 #DVD size
-#    output_size = 0
-#
-#    for path,dirs,files in os.walk(output_path_unsorted):
-#        for f in files:
-#            fp = os.path.join(path,f)
-#            output_size += os.path.getsize(fp)
-#    if (debug == 1):
-#        print("size of output:",output_size / 1E9)
-#    if (output_size % size == 0):
-#        folder_size = int(output_size / size)
-#    else:
-#        folder_size = int(output_size / size) + 1
-#    print (folder_size)
-#    print("output size:",folder_size)   #remove or debug toggle
-#    for folder in range(1,folder_size + 1):
-#        folder_name = "disk" + "00" + str(folder)
-#        output_folder = os.path.join(output_path,folder_name)
-#        print ("output_folder",output_folder)
-#        if not os.path.exists(output_folder):
-#            os.mkdir(output_folder)
-#        output_folder_size = os.path.getsize(output_folder)
-#        print ("output_folder_size:", output_folder_size) 
-
-#        for entry in os.scandir(output_path):
-#            print (entry)
-#            for sub_entry in entry:
-#                print (sub_entry)
-#            for sub_entry in os.scandir(entry):
-#                print (sub_entry.path)
-
-#        for dirs,subdirs,files in os.walk(output_path):
-#            print("dirs:",dirs)
-#            path_size = os.path.getsize(dirs)
-#            sub_path_size = os.path.getsize(subdirs)
-#            file_path_size = os.path.getsize(files)
-#            print("path_size:",path_size)
-#            if (output_folder_size < size):
-#                if (path_size < output_folder_size):
-#                    shutil.move(dirs,output_folder)
-#                if (sub_path_size < output_folder_size):
-#                    shutil.move(subdirs,output_folder)
-#                if (file_path_size < output_folder_size):
-#                    shutil.move(files,output_folder)
-#            for subdir in subdirs:
-#                subdir_total_size = 0
-#                subdir_total_size += os.path.getsize(subdir)
-#                print (subdir_total_size)
-#            for file in files:
-#                print(file)
-#        folder_name = "disk" + "00" + str(folder)
-#        output_folder = os.path.join(output_path,folder_name)
-#        if not os.path.exists(output_folder):
-#            os.mkdir(output_folder)
-#        output_folder_size = os.path.getsize(output_folder)
-#        for path in os.listdir(output_path):
-#            print (path)    #remove or debug toggle
-#            path_size = os.path.getsize(os.walk(path))
-#            if (output_folder_size < size):
-#                if (path_size < output_folder_size):
-#                    shutil.move(path,output_folder)
-
-        
-    # divide folder_size(total sum size of all files into equal sized partitions based on the size parameter)
     
 def input_checksum(debug,input_path,checksum):
     print ("\nInput Checksum Thread:")
@@ -299,11 +208,7 @@ def input_checksum(debug,input_path,checksum):
 #    input_checksum_thread.start()
 
 free_space_checker(input_path,output_path,debug,input_size)
-file_sorter_photos(input_path,output_path,debug,checksum,size) # remove
-
-#disk_sorter(debug,output_path,size,output_path_unsorted)   #remove
-
-#
+file_sorter_photos(input_path,output_path,debug,checksum,size) #remove
 
 
 
