@@ -117,12 +117,13 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
                 print ("File month:","\t",image_date_month)
                 print ("File day:","\t",image_date_day)
             image_size = os.path.getsize(image_path)    #input image size
-            if (folder_size + image_size > size):
+            if (folder_size + image_size > size - 1E6):
                 folder += 1
                 folder_name = "disk" + str(folder + 1)
                 output_folder = os.path.join(output_path,folder_name)
-#            folder_name = "disk" + str(folder)
-#            output_folder = os.path.join(output_path,folder_name)
+                folder_size = 0
+            folder_name = "disk" + str(folder)
+            output_folder = os.path.join(output_path,folder_name)
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
             if not os.path.isdir(output_folder):
@@ -144,7 +145,7 @@ def file_sorter_photos(input_path,output_path,debug,checksum,size):
                 print("image file year: ", image_file_year)                      
                 print("image file month:", image_file_month)                     
                 print("image file day:  ", image_file_day)                       
-#            shutil.copy(image_path,image_file_day,follow_symlinks=False)
+            shutil.copy(image_path,image_file_day,follow_symlinks=False)
             folder_size += image_size
 
 #    print("image size sum:\t",image_size_sum,"Bytes") #remove or debug
