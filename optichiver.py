@@ -8,6 +8,7 @@ import os
 import exifread
 import threading
 import toml
+import re
 
 debug = 0   #debug toggle
 
@@ -117,15 +118,25 @@ def file_sorter_photos():
         #Exif Parser    
         with open(image_path,'rb') as image_file:
             tags = exifread.process_file(image_file,details=False)
-            image_date = tags.get('Image DateTime')
-            image_date_year = str(image_date)[0:4]
-            image_date_month = str(image_date)[5:7]
-            image_date_day = str(image_date)[8:10]
+
+            if (image_file == None):                        #Non Exif image parser format: yyyymmdd_hhmmss
+                image_filename = re.findall(r'\d+',file)    #Regex digit string parser
+                if (len(image_filename[0]) == 8):           #8 character check
+                    image_date_year = image_filename[0][0:4]
+                    image_date_month = image_filename[0][4:6]
+                    image_date_day = image_filename[0][6:8]
+            else:
+                image_date = tags.get('Image DateTime')
+                image_date_year = str(image_date)[0:4]
+                image_date_month = str(image_date)[5:7]
+                image_date_day = str(image_date)[8:10]
+
             if (debug == 1):
                 print ("File date:","\t",image_date)
                 print ("File year:","\t",image_date_year) 
                 print ("File month:","\t",image_date_month)
                 print ("File day:","\t",image_date_day)
+
             image_size = os.path.getsize(image_path)    #input image size
 
             if (folder_size + image_size > size - 1E7):
