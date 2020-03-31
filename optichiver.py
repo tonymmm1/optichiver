@@ -26,7 +26,7 @@ bluray_size=            25E9    #B   #input_size == 3
 bluray_double_size=     50E9    #B   #input_size == 4
 bluray_quad_size=       100E9   #B   #input_size == 5
 
-print ("Optichiver: Script for backing up to optical discs" + "\nEnsure there is enough disk space as this program will create file duplicates")
+print ("Optichiver: Script for backing up to optical discs")
 
 def size_input():
     global size
@@ -139,8 +139,6 @@ def file_sorter_photos():
 
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
-            if not os.path.isdir(output_folder):
-                os.mkdir(output_folder)                   
             
             image_file_year = os.path.join(output_folder,image_date_year)         
             image_file_month = os.path.join(image_file_year,image_date_month)     
@@ -158,8 +156,15 @@ def file_sorter_photos():
                 print("image file year: ", image_file_year)                      
                 print("image file month:", image_file_month)                     
                 print("image file day:  ", image_file_day)
+                
             shutil.copy(image_path,image_file_day,follow_symlinks=False)
+
             folder_size += image_size
+            hash_data = image_file.read()
+            checksum.update(hash_data)
+            output_hash_file = os.path.join(output_folder,'hashes.toml')
+            with open(output_hash_file,'a') as hashes:
+                hashes.write(toml.dumps({file: checksum.hexdigest()}))
 
 def input_checksum():
     global debug
@@ -167,7 +172,6 @@ def input_checksum():
     global checksum
     if not os.path.exists('hashes.toml'):
         print ("\nInput Checksum Thread:")
-    #    for file in os.listdir(input_path): 
         for path,dirs,files in os.walk(input_path):
             for file in files:
                 input_image = os.path.join(input_path,file)
