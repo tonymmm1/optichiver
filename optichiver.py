@@ -17,15 +17,16 @@ size = 0
 input_size = 0
 input_path = ""
 output_path = ""
-
 #Static Variable Declarations
 checksum = hashlib.sha256()
+mode = "photos" #future expansion will include other modes
 
-dvd_size=               4.7E9   #B   #input_size == 1
-dvd_double_size=        9.4E9   #B   #input_size == 2
-bluray_size=            25E9    #B   #input_size == 3
-bluray_double_size=     50E9    #B   #input_size == 4
-bluray_quad_size=       100E9   #B   #input_size == 5
+dvd_size=               4.7E9   #B  #input_size == 1
+dvd_double_size=        9.4E9   #B  #input_size == 2
+bluray_size=            25E9    #B  #input_size == 3
+bluray_double_size=     50E9    #B  #input_size == 4
+bluray_quad_size=       100E9   #B  #input_size == 5
+custom_size=            0       #B  #input_size == 6
 
 print ("Optichiver: Script for backing up to optical discs")
 
@@ -34,7 +35,7 @@ def size_input():
     global debug
     while True:
         try:    
-            input_size = int(input("Select disk" + "\n1: DVD(4.7GB)" + "\n2: DVD Double Layer(9.4GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100GB)" + "\ninput: "))
+            input_size = int(input("Select disk" + "\n1: DVD(4.7GB)" + "\n2: DVD Double Layer(9.4GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100GB)" + "\n6: Custom Size(B)" + "\ninput: "))
         except ValueError:
             print ("\nInput was not valid")
             continue
@@ -53,8 +54,18 @@ def size_input():
         elif (input_size == 5):
             size=   bluray_quad_size
             break
+        elif (input_size == 6):
+            while True:
+                try:
+                    size = int(input("Custom Size: "))
+                    break
+                except ValueError:
+                    print ("\nInput was not valid")
+                    continue
+            break
         else:
             continue
+
     if (debug == 1):
          print ("Selected disk size was ",size,"B")
 
@@ -177,7 +188,7 @@ def file_sorter_photos():
             with open(output_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: checksum.hexdigest()}))
 
-def input_checksum():
+def input_checksum_photos():
     global debug
     global input_path
     global checksum
@@ -199,7 +210,11 @@ def input_checksum():
 size_input()
 file_paths()
 free_space_checker()
-if __name__ == "__main__":
-    input_checksum_thread= threading.Thread(target=input_checksum, args=())
-    input_checksum_thread.start()
-file_sorter_photos() 
+if(mode == "photos"):  
+    if __name__ == "__main__":
+        input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
+        input_checksum_thread.start()
+    file_sorter_photos()
+
+#if(mode == "files"):
+    
