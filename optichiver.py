@@ -1,5 +1,6 @@
 #!/usr/bin/env  python3
 
+#Libraries
 import argparse
 from argparse import RawTextHelpFormatter
 import exifread
@@ -17,7 +18,8 @@ import toml
 
 #Empty Variable Declarations
 debug = 0       #debug 
-input_size = 0  
+input_path_size = 0 
+input_hash_file = ""
 input_path = ""
 output_path = ""
 checksum = ""
@@ -30,15 +32,14 @@ start = time.time()
 
 print ("Optichiver: Script for backing up to optical discs")
 
-#Mode prompt
-
+#Argument parsing
 parser = argparse.ArgumentParser(description="Optichiver cli", formatter_class=RawTextHelpFormatter)
-
-#config(config)
-#parser.add_argument("--config",help="Config file",type=string)
 
 #input path(input)
 parser.add_argument("--input",help="Input path",default="NONE",type=str)
+
+#input-hash(input-hash)
+parser.add_argument("--input-hash",help="Input hash file",default="NONE",type=str)
 
 #recursion(recursive)
 parser.add_argument("--recursive",help="Recursion enable",action="store_true")
@@ -55,7 +56,7 @@ parser.add_argument("--size",
         "\tBL\t25GB\n"
         "\tBL-DL\t50GB\n"
         "\tBL-QL\t100GB\n"
-        "\tCustom\t(int) B\n"
+        "\tCustom\t(int)B\n"
         ,default="DVD",type=str)
 
 #checksum(checksum)
@@ -89,6 +90,14 @@ else:
 
     if (debug == 1):
         print("debug> input path:",input_path)
+
+if (args.input-hash == "NONE"):
+    print("\nERROR: input hash file was not configured")
+    quit()
+else:
+    input_hash_file = os.path(args.input-hash)
+    if (debug == 1):
+        print("debug> input hash file:",input_hash_file)
 
 #args.recursive
 if (args.input):
@@ -172,54 +181,29 @@ if (args.v):
     debug = 1
     print("debug> Output verbosity on")
 
-def file_paths():
-    global input_path
-    global output_path
-    global debug
-
-    input_path_temp = input("\nInput path: ")
-    if (len(input_path_temp) > 0):
-        if (debug == 1):
-            print ("input_path length is: ", len(input_path_temp))
-        input_path = input_path_temp
-    else:
-        print ("Error input is incorrect")
-        input_path_temp = input("\nInput path: ")
-
-    output_path_temp = input("\nOutput path: ")
-    if (len(output_path_temp) > 0 and output_path_temp != input_path_temp): 
-        if (debug == 1):
-            print ("output_path length is: ", len(output_path_temp))
-        output_path = output_path_temp
-        if not os.path.isdir(output_path):
-            os.mkdir(output_path)
-    else:
-        print ("Error input is incorrect")
-        output_path_temp = input("\nOutput path: ")
-
 def free_space_checker():
+    global debug
     global input_path
     global output_path
-    global debug
-    global input_size
+    global input_path_size
 
     for path,dirs,files in os.walk(input_path):
         for f in files:
             fp = os.path.join(path,f)
-            input_size += os.path.getsize(fp)
-    print (input_size)
+            input_path_size += os.path.getsize(fp)
+    print (input_path_size)
     output_free = int(os.statvfs(output_path)[1] * os.statvfs(output_path)[7])
     if(debug == 1):
-        print ("input:  ",input_path,"used:", "\t",input_size, "\tBytes")
+        print ("input:  ",input_path,"used:", "\t",input_path_size, "\tBytes")
         print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
-    if(output_free < input_size):
+    if(output_free < input_path_size):
         sys.exit("\nERROR: Insufficient Space")
 
 def file_sorter_photos():
+    global checksum
+    global debug
     global input_path
     global output_path
-    global debug
-    global checksum
     global size
 
     folder_size = 0
@@ -256,7 +240,7 @@ def file_sorter_photos():
 
             image_size = os.path.getsize(image_path)    #input image size
 
-            if (folder_size + image_size > size - 1E7):
+            if (folder_size + image_size > size - 1E7):     #offset by -1E7(10MB)
                 folder += 1
                 folder_name = "disk" + str(folder + 1)
                 output_folder = os.path.join(output_path,folder_name)
@@ -290,16 +274,18 @@ def file_sorter_photos():
             folder_size += image_size
             hash_data = image_file.read()
             checksum.update(hash_data)
-            output_hash_file = os.path.join(output_folder,'hashes.toml')
+            output_hash_file = os.path.join(output_folder,'hashes.toml')    #add variable for output hashes file
             with open(output_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: checksum.hexdigest()}))
 
+#Checksum of input photos
 def input_checksum_photos():
-    global debug
-    global input_path
     global checksum
+    global debug
+    global input_hash_file
+    global input_path
 
-    if not os.path.exists('hashes.toml'):
+    if not os.path.exists(input_hash_file):
         print ("\nInput Checksum Thread:")
         for path,dirs,files in os.walk(input_path):
             for file in files:
@@ -307,18 +293,16 @@ def input_checksum_photos():
                 with open (input_image,'rb') as hash:
                     hash_data = hash.read()
                     checksum.update(hash_data)
-                    with open('hashes.toml','a') as hashes:
+                    with open(input_hash_file,'a') as hashes:
                         hashes.write(toml.dumps({file: checksum.hexdigest()}))
                     if (debug == 1):
                         print("Input Checksum Thread:","input checksum")
                         print("Input Checksum Thread:","input path:\t\t",input_image)
-                        print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")
+#                        print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")       #remove
 
-size_input()
-file_paths()
 free_space_checker()
 if __name__ == "__main__":
-    input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
+    input_checksum_thread = threading.Thread(target=input_checksum_photos, args=())
     input_checksum_thread.start()
 file_sorter_photos()
 
