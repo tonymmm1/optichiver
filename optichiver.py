@@ -1,78 +1,182 @@
 #!/usr/bin/env  python3
 
+import argparse
+from argparse import RawTextHelpFormatter
+import exifread
 import hashlib
+import os
+import platform
+import re
 import shutil
 import subprocess
 import sys
-import os
-import exifread
 import threading
+import time
 import toml
-import re
 
-debug = 0   #debug toggle
 
 #Empty Variable Declarations
-size = 0
-input_size = 0
+debug = 0       #debug 
+input_size = 0  
 input_path = ""
 output_path = ""
-#Static Variable Declarations
-checksum = hashlib.sha256()
-mode = "photos" #future expansion will include other modes
+checksum = ""
+size = 0
 
-dvd_size=               4.7E9   #B  #input_size == 1
-dvd_double_size=        9.4E9   #B  #input_size == 2
-bluray_size=            25E9    #B  #input_size == 3
-bluray_double_size=     50E9    #B  #input_size == 4
-bluray_quad_size=       100E9   #B  #input_size == 5
-custom_size=            0       #B  #input_size == 6
+#Static Variable Declarations
+date = time.strftime('%Y-%m-%d_%T') #Date variable
+path = os.getcwd()
+start = time.time()
 
 print ("Optichiver: Script for backing up to optical discs")
 
-def size_input():
-    global size
-    global debug
-    while True:
-        try:    
-            input_size = int(input("Select disk" + "\n1: DVD(4.7GB)" + "\n2: DVD Double Layer(9.4GB)" + "\n3: Bluray(25GB)" + "\n4: Bluray Double Layer(50GB)" + "\n5: Bluray Quad Layer(100GB)" + "\n6: Custom Size(B)" + "\ninput: "))
-        except ValueError:
-            print ("\nInput was not valid")
-            continue
-        if (input_size == 1):
-            size=   dvd_size
-            break
-        elif (input_size == 2):
-            size=   dvd_double_size
-            break
-        elif (input_size == 3):
-            size=   bluray_size
-            break
-        elif (input_size == 4): 
-            size=   bluray_double_size
-            break
-        elif (input_size == 5):
-            size=   bluray_quad_size
-            break
-        elif (input_size == 6):
-            while True:
-                try:
-                    size = int(input("Custom Size: "))
-                    break
-                except ValueError:
-                    print ("\nInput was not valid")
-                    continue
-            break
-        else:
-            continue
+#Mode prompt
+
+parser = argparse.ArgumentParser(description="Optichiver cli", formatter_class=RawTextHelpFormatter)
+
+#config(config)
+#parser.add_argument("--config",help="Config file",type=string)
+
+#input path(input)
+parser.add_argument("--input",help="Input path",default="NONE",type=str)
+
+#recursion(recursive)
+parser.add_argument("--recursive",help="Recursion enable",action="store_true")
+
+#output path(output)
+parser.add_argument("--output",help="Output path",default="NONE",type=str)
+
+#size(size)
+parser.add_argument("--size",
+        help="Disc size:\n"
+        "\tCD\t750MB\n"
+        "\tDVD\t4.7GB\n"
+        "\tDVD-DL\t9.4GB\n"
+        "\tBL\t25GB\n"
+        "\tBL-DL\t50GB\n"
+        "\tBL-QL\t100GB\n"
+        "\tCustom\t(int) B\n"
+        ,default="DVD",type=str)
+
+#checksum(checksum)
+parser.add_argument("--checksum",
+        help="Checksum algorithm:\n"
+            "\tmd5\n"
+            "\tsha1\n"
+            "\tsha224\n"
+            "\tsha256\n"
+            "\tsha384\n"
+            "\tsha512\n"
+            ,default="hashlib.md5()",type=str)
+
+#verify(verify)
+parser.add_argument("--verify",help="Verify checksums on output",action="store_true")
+
+#verbose(v)
+parser.add_argument("-v","--verbose",help="Increase output verbosity",action="store_true")
+
+args = parser.parse_args()
+
+#args.input
+if (args.input == "NONE"):
+    print("\nERROR: input path was not configured")
+    quit()
+else:
+    input_path = os.path(args.input)
+    if not (os.path.exists(input_path)):
+        print("\nERROR: input path is not valid")
+        quit()
 
     if (debug == 1):
-         print ("Selected disk size was ",size,"B")
+        print("debug> input path:",input_path)
+
+#args.recursive
+if (args.input):
+    recursive = args.recursive
+    if(debug == 1):
+        print("debug> recursion enabled: ",recursive)
+
+#args.output
+if (args.output == "NONE"):
+    print("\nERROR: output path was not configured")
+    quit()
+else:
+    output_path = os.path(args.input)
+    if not (os.path.exists(output_path)):
+        print("\nERROR: output path is not valid")
+        quit()
+
+    if (debug == 1):                               
+        print("debug> input path:",input_path)     
+
+#args.size
+if (args.size == "DVD"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+elif (args.size == "DVD-DL"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+elif (args.size == "BL"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+elif (args.size == "BL-DL"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+elif (args.size == "BL-QL"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+elif (args.size == "Custom"):
+    size = args.size
+    if(debug == 1):
+        print("debug> disc size:",size)
+else:
+    print("\nERROR: input is not valid")
+    quit()
+
+#args.checksum
+if(args.checksum == "md5"):
+    checksum = hashlib.md5()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "sha1"):
+    checksum = hashlib.sha1()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "sha224"):
+    checksum = hashlib.sha224()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "sha256"):
+    checksum = hashlib.sha256()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "sha384"):
+    checksum = hashlib.sha384()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "sha512"):
+    checksum = hashlib.sha512()
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+else:
+    print("\nERROR: checksum is not valid")
+    quit()
+
+#args.v
+if (args.v):
+    debug = 1
+    print("debug> Output verbosity on")
 
 def file_paths():
     global input_path
     global output_path
     global debug
+
     input_path_temp = input("\nInput path: ")
     if (len(input_path_temp) > 0):
         if (debug == 1):
@@ -98,6 +202,7 @@ def free_space_checker():
     global output_path
     global debug
     global input_size
+
     for path,dirs,files in os.walk(input_path):
         for f in files:
             fp = os.path.join(path,f)
@@ -116,6 +221,7 @@ def file_sorter_photos():
     global debug
     global checksum
     global size
+
     folder_size = 0
     folder = 1
     for file in os.listdir(input_path):
@@ -192,6 +298,7 @@ def input_checksum_photos():
     global debug
     global input_path
     global checksum
+
     if not os.path.exists('hashes.toml'):
         print ("\nInput Checksum Thread:")
         for path,dirs,files in os.walk(input_path):
@@ -210,11 +317,10 @@ def input_checksum_photos():
 size_input()
 file_paths()
 free_space_checker()
-if(mode == "photos"):  
-    if __name__ == "__main__":
-        input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
-        input_checksum_thread.start()
-    file_sorter_photos()
+if __name__ == "__main__":
+    input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
+    input_checksum_thread.start()
+file_sorter_photos()
 
 #if(mode == "files"):
     
