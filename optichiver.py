@@ -17,13 +17,16 @@ import toml
 
 
 #Empty Variable Declarations
+checksum = ""
 debug = 0       #debug 
+disc = ""
 input_path_size = 0 
 input_hash_file = ""
 input_path = ""
+label = ""
 output_path = ""
-checksum = ""
 size = 0
+udf = ""
 
 #Static Variable Declarations
 date = time.strftime('%Y-%m-%d_%T') #Date variable
@@ -36,28 +39,32 @@ print ("Optichiver: Script for backing up to optical discs")
 parser = argparse.ArgumentParser(description="Optichiver cli", formatter_class=RawTextHelpFormatter)
 
 #input path(input)
-parser.add_argument("--input",help="Input path",default="NONE",type=str)
+parser.add_argument("--input",help="Input path",default=None)
 
-#input-hash(input-hash)
-parser.add_argument("--input-hash",help="Input hash file",default="NONE",type=str)
+#hashfile(hashfile)
+parser.add_argument("--hashfile",help="Input hash file",default=None)
 
 #recursion(recursive)
-parser.add_argument("--recursive",help="Recursion enable",action="store_true")
+#parser.add_argument("--recursive",help="Recursion enable",action="store_true")
+
+#label(label)
+parser.add_argument("--label",help="Set disc label prefix",default="disc")
 
 #output path(output)
-parser.add_argument("--output",help="Output path",default="NONE",type=str)
+parser.add_argument("--output",help="Output path",default=None)
 
 #size(size)
 parser.add_argument("--size",
         help="Disc size:\n"
-        "\tCD\t750MB\n"
         "\tDVD\t4.7GB\n"
         "\tDVD-DL\t9.4GB\n"
         "\tBL\t25GB\n"
         "\tBL-DL\t50GB\n"
         "\tBL-QL\t100GB\n"
-        "\tCustom\t(int)B\n"
         ,default="DVD",type=str)
+
+#custom(custom)
+parser.add_argument("--custom",help="Custom disc size (int)B")
 
 #checksum(checksum)
 parser.add_argument("--checksum",
@@ -68,86 +75,106 @@ parser.add_argument("--checksum",
             "\tsha256\n"
             "\tsha384\n"
             "\tsha512\n"
-            ,default="hashlib.md5()",type=str)
+            ,default="md5",type=str)
 
 #verify(verify)
 parser.add_argument("--verify",help="Verify checksums on output",action="store_true")
 
 #verbose(v)
-parser.add_argument("-v","--verbose",help="Increase output verbosity",action="store_true")
+parser.add_argument("--verbose",help="Increase output verbosity",action="store_true")
 
 args = parser.parse_args()
 
-#args.input
-if (args.input == "NONE"):
+#input
+if (args.input == None):
     print("\nERROR: input path was not configured")
     quit()
 else:
-    input_path = os.path(args.input)
-    if not (os.path.exists(input_path)):
+    input_path = args.input
+    print(input_path)
+    if not (os.path.isdir(input_path)):
         print("\nERROR: input path is not valid")
         quit()
-
     if (debug == 1):
         print("debug> input path:",input_path)
 
-if (args.input-hash == "NONE"):
+#input hashfile
+if (args.hashfile == None):
     print("\nERROR: input hash file was not configured")
     quit()
 else:
-    input_hash_file = os.path(args.input-hash)
+    input_hash_file = args.hashfile
     if (debug == 1):
         print("debug> input hash file:",input_hash_file)
 
-#args.recursive
-if (args.input):
-    recursive = args.recursive
-    if(debug == 1):
-        print("debug> recursion enabled: ",recursive)
+#recursive
+#if (args.input):
+#    recursive = args.recursive
+#    if(debug == 1):
+#        print("debug> recursion enabled:",recursive)
 
-#args.output
-if (args.output == "NONE"):
+#label
+if(args.label):
+    label = args.label
+    if(debug == 1):
+        print("debug> disc label:",label)
+
+#output
+if (args.output == None):
     print("\nERROR: output path was not configured")
     quit()
 else:
-    output_path = os.path(args.input)
-    if not (os.path.exists(output_path)):
+    output_path = args.output
+    if not (os.path.isdir(output_path)):
         print("\nERROR: output path is not valid")
         quit()
-
     if (debug == 1):                               
-        print("debug> input path:",input_path)     
+        print("debug> output path:",output_path)     
 
-#args.size
+#size
 if (args.size == "DVD"):
-    size = args.size
+    size = 4.7E9
+    disc = "dvdr"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "DVD-DL"):
-    size = args.size
+    size = 9.4E9
+    disc = "dvdr"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL"):
-    size = args.size
+    size = 25E9
+    disc = "bdr"
+    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL-DL"):
-    size = args.size
+    size = 5E10
+    disc = "bdr"
+    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL-QL"):
-    size = args.size
-    if(debug == 1):
-        print("debug> disc size:",size)
-elif (args.size == "Custom"):
-    size = args.size
+    size = 1E11
+    disc = "bdr"
+    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 else:
-    print("\nERROR: input is not valid")
+    print("\nERROR: disc size is not valid")
     quit()
 
-#args.checksum
+#custom
+if (args.custom):
+    size = int(args.custom)
+    disc = "custom"
+    if(debug == 1):
+        print("debug> disc size:",size)
+else:
+    print("\nERROR: custom size is not valid")
+    quit()
+
+#checksum
 if(args.checksum == "md5"):
     checksum = hashlib.md5()
     if(debug == 1):
@@ -176,8 +203,8 @@ else:
     print("\nERROR: checksum is not valid")
     quit()
 
-#args.v
-if (args.v):
+#verbose
+if (args.verbose):
     debug = 1
     print("debug> Output verbosity on")
 
@@ -203,6 +230,7 @@ def file_sorter_photos():
     global checksum
     global debug
     global input_path
+    global label
     global output_path
     global size
 
@@ -240,13 +268,13 @@ def file_sorter_photos():
 
             image_size = os.path.getsize(image_path)    #input image size
 
-            if (folder_size + image_size > size - 1E7):     #offset by -1E7(10MB)
+            if (folder_size + image_size > size):     
                 folder += 1
-                folder_name = "disk" + str(folder + 1)
+                folder_name = label + "_" + str(folder + 1).zfill(3)
                 output_folder = os.path.join(output_path,folder_name)
                 folder_size = 0
 
-            folder_name = "disk" + str(folder)
+            folder_name = label + "_" + str(folder).zfill(3)
             output_folder = os.path.join(output_path,folder_name)
 
             if not os.path.isdir(output_folder):
@@ -274,9 +302,30 @@ def file_sorter_photos():
             folder_size += image_size
             hash_data = image_file.read()
             checksum.update(hash_data)
-            output_hash_file = os.path.join(output_folder,'hashes.toml')    #add variable for output hashes file
+            output_hash_file = os.path.join(output_folder,'hashes.toml')
             with open(output_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: checksum.hexdigest()}))
+
+
+def verify_output():
+    global checksum
+    global debug
+    global disc
+    global input_hash_file
+    global input_path
+    global output_path
+
+    #mkisofs
+    subprocess.run(["mkisofs"])
+
+def write_disc():
+    global debug
+    global disc
+    global udf
+
+    if not (disc == "custom"):
+        #mkudffs --utf8 --media-type=cdr --label=disk1 disk1.udf
+        subprocess.run(["mkudffs","--utf8","--media-type="+disc,"--label="+label,])
 
 #Checksum of input photos
 def input_checksum_photos():
@@ -295,16 +344,15 @@ def input_checksum_photos():
                     checksum.update(hash_data)
                     with open(input_hash_file,'a') as hashes:
                         hashes.write(toml.dumps({file: checksum.hexdigest()}))
-                    if (debug == 1):
-                        print("Input Checksum Thread:","input checksum")
-                        print("Input Checksum Thread:","input path:\t\t",input_image)
-#                        print("----",file,"\t",":\t",checksum.hexdigest()[56:64],"----")       #remove
+#                    if (debug == 1):
+#                        print("Input Checksum Thread:","input checksum")
+#                        print("Input Checksum Thread:","input path:\t\t",input_image)
+#                        print("----",file,"\t",":\t",checksum.hexdigest(),"----")
 
 free_space_checker()
 if __name__ == "__main__":
     input_checksum_thread = threading.Thread(target=input_checksum_photos, args=())
     input_checksum_thread.start()
 file_sorter_photos()
-
-#if(mode == "files"):
-    
+#verify_output()
+#write_disc()
