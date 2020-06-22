@@ -18,15 +18,15 @@ import toml
 
 #Empty Variable Declarations
 checksum = ""
-debug = 0       #debug 
-disc = ""
+debug = 0           #debug 
+#disc = ""          #future 
 input_path_size = 0 
 input_hash_file = ""
 input_path = ""
 label = ""
 output_path = ""
 size = 0
-udf = ""
+#udf = ""           #future
 
 #Static Variable Declarations
 date = time.strftime('%Y-%m-%d_%T') #Date variable
@@ -43,9 +43,6 @@ parser.add_argument("--input",help="Input path",default=None)
 
 #hashfile(hashfile)
 parser.add_argument("--hashfile",help="Input hash file",default=None)
-
-#recursion(recursive)
-#parser.add_argument("--recursive",help="Recursion enable",action="store_true")
 
 #label(label)
 parser.add_argument("--label",help="Set disc label prefix",default="disc")
@@ -107,12 +104,6 @@ else:
     if (debug == 1):
         print("debug> input hash file:",input_hash_file)
 
-#recursive
-#if (args.input):
-#    recursive = args.recursive
-#    if(debug == 1):
-#        print("debug> recursion enabled:",recursive)
-
 #label
 if(args.label):
     label = args.label
@@ -134,30 +125,30 @@ else:
 #size
 if (args.size == "DVD"):
     size = 4.7E9
-    disc = "dvdr"
+#    disc = "dvdr"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "DVD-DL"):
     size = 9.4E9
-    disc = "dvdr"
+#    disc = "dvdr"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL"):
     size = 25E9
-    disc = "bdr"
-    udf = "2.60"
+#    disc = "bdr"
+#    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL-DL"):
     size = 5E10
-    disc = "bdr"
-    udf = "2.60"
+#    disc = "bdr"
+#    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 elif (args.size == "BL-QL"):
     size = 1E11
-    disc = "bdr"
-    udf = "2.60"
+#    disc = "bdr"
+#    udf = "2.60"
     if(debug == 1):
         print("debug> disc size:",size)
 else:
@@ -167,7 +158,7 @@ else:
 #custom
 if (args.custom):
     size = int(args.custom)
-    disc = "custom"
+#    disc = "custom"
     if(debug == 1):
         print("debug> disc size:",size)
 else:
@@ -306,26 +297,82 @@ def file_sorter_photos():
             with open(output_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: checksum.hexdigest()}))
 
-
-def verify_output():
+#verifies input_hash_file with specified path(created iso/udf file and or burnt disc)
+def verify_output(verify_path):
     global checksum
     global debug
     global disc
     global input_hash_file
-    global input_path
     global output_path
+    
+    verify_path = output_path   #default value is output_path
+    verify_hash_file = os.path.join(verify_path,"verify_hash_file.toml")
+    
+    if os.path.exists(input_hash_file) and os.path.exists(output_path):
+        if not os.path.exists(verify_path):
+            os.mkdir(verify_path)
+            if(debug == 1):
+                print("debug> os.mkdir(verify_path)")
+        if (debug == 1):
+            print("debug> os.listdir(verify_path)")
+        if not os.path.exists(input_hash_file):
+            for path,dirs,files in os.walk(verify_path):
+                for file in files:
+                    verify_image = os.path.join(verify_path,file)
+                    with open (verify_image,'rb') as hash:
+                        hash_data = hash.read()
+                        checksum.update(hash_data)
+                        with open(verify_hash_file,'a') as hashes:
+                            hashes.write(toml.dumps({file: checksum.hexdigest()}))
+                        if (debug == 1):
+                            print("debug> file hash",file,":",checksum.hexdigest())
+        else:
+            print("\nERROR: verification hash file exists")
+            quit()
+    else:
+        print("\nERROR: output path or input hash file do not exist")
+        quit()
 
-    #mkisofs
-    subprocess.run(["mkisofs"])
-
-def write_disc():
-    global debug
-    global disc
-    global udf
-
-    if not (disc == "custom"):
-        #mkudffs --utf8 --media-type=cdr --label=disk1 disk1.udf
-        subprocess.run(["mkudffs","--utf8","--media-type="+disc,"--label="+label,])
+#Lack of UDF 2.5/2.6 Linux Kernel Support, Implement in the future
+#def write_disc():
+#    global debug
+#    global disc
+#    global label
+#    global output_path
+#    global size
+#    global udf
+#
+#    if not (disc == "custom"):
+#        for dirs in os.walk(output_path):
+#            sparse_file_label = dirs + ".udf"
+#            sparse_file_location = os.path.join(output_path,sparse_file_label)
+#            sparse_file = open(sparse_file_location)
+#            sparse_file.truncate(size)
+#            sparse_file.close
+#
+#            #mkudffs --utf8 --media-type=cdr --label=disk1 disk1.udf
+#            subprocess.run(["mkudffs","--utf8","--media-type="+disc,"--label="+dirs,"--udfrev="+udf,sparse_file])
+#
+#            mount_location = os.path("/mnt/optichiver")
+#            if not os.path.exists(mount_location):
+#                os.mkdir(mount_location)
+#            else:
+#                print("ERROR: unable to create mount location",mount_location)
+#                quit()
+#            if os.path.exists(mount_location):
+#                #mount -o rw,loop sparse_file mount_location
+#                subprocess.run(["mount","-o","rw,loop",sparse_file,mount_location])
+#                shutil.copytree(dirs,mount_location,symlinks=False)
+#                if(debug == 1):
+#                    print("debug> copied files:")
+#                    print(os.listdir(mount_location))
+#                subprocess.run(["umount",mount_location])
+#                if(debug == 1):
+#                    print("debug> unmounted image file")
+#            else: 
+#                print("ERROR: mount location does not exist")
+#                quit()
+                
 
 #Checksum of input photos
 def input_checksum_photos():
@@ -344,15 +391,10 @@ def input_checksum_photos():
                     checksum.update(hash_data)
                     with open(input_hash_file,'a') as hashes:
                         hashes.write(toml.dumps({file: checksum.hexdigest()}))
-#                    if (debug == 1):
-#                        print("Input Checksum Thread:","input checksum")
-#                        print("Input Checksum Thread:","input path:\t\t",input_image)
-#                        print("----",file,"\t",":\t",checksum.hexdigest(),"----")
 
 free_space_checker()
 if __name__ == "__main__":
     input_checksum_thread = threading.Thread(target=input_checksum_photos, args=())
     input_checksum_thread.start()
 file_sorter_photos()
-#verify_output()
-#write_disc()
+verify_output(output_path)
