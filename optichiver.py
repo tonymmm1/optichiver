@@ -41,12 +41,6 @@ parser = argparse.ArgumentParser(description="Optichiver cli", formatter_class=R
 #input path(input)
 parser.add_argument("--input",help="Input path",default=None)
 
-#hashfile(hashfile)
-parser.add_argument("--hashfile",help="Input hash file",default=None)
-
-#label(label)
-parser.add_argument("--label",help="Set disc label prefix",default="disc")
-
 #output path(output)
 parser.add_argument("--output",help="Output path",default=None)
 
@@ -68,6 +62,17 @@ parser.add_argument("--custom",
         help="Custom size:\n" 
         "\t(int)B\n",default=None)
 
+#label(label)
+parser.add_argument("--label",help="Set disc label prefix",default="disc")
+
+#format
+parser.add_argument("--format",
+        help="Output file format\n"
+        "\tYMD\t\t/label/year/month/dir/image.jpg\n"
+        "\tYM\t\t/label/year/month/image.jpg\n"
+        "\tY\t\t/label/year/image.jpg\n"
+        "\tNONE(default)\t/label/image.jpg\n"
+        ,default="NONE")
 #hash
 parser.add_argument("--hash",help="Enable hashing",action="store_true")
 
@@ -83,14 +88,8 @@ parser.add_argument("--checksum",
             "\tsha512\n"
             ,default="sha256")
 
-#format
-parser.add_argument("--format",
-        help="Output file format\n"
-        "\tYMD\t\t/label/year/month/dir/image.jpg\n"
-        "\tYM\t\t/label/year/month/image.jpg\n"
-        "\tY\t\t/label/year/image.jpg\n"
-        "\tNONE(default)\t/label/image.jpg\n"
-        ,default="NONE")
+#hashfile(hashfile)
+parser.add_argument("--hashfile",help="Input hash file",default=None)
 
 #verbose(v)
 parser.add_argument("--verbose",help="Increase output verbosity",action="store_true")
@@ -113,15 +112,6 @@ else:
         quit()
     if (debug == 1):
         print("debug> input path:",input_path)
-
-#input hashfile
-if (args.hashfile == None):
-    print("\nERROR: input hash file was not configured")
-    quit()
-else:
-    input_hash_file = args.hashfile
-    if (debug == 1):
-        print("debug> input hash file:",input_hash_file)
 
 #label
 if(args.label):
@@ -181,6 +171,27 @@ else:
     print("\nERROR: custom size is not valid")
     quit()
 
+#format
+if(args.format == "YMD"):
+    format_method = "YMD"
+    if(debug == 1):
+        print("debug> format:",format_method)
+elif(args.format == "YM"):
+    format_method = "YM"
+    if(debug == 1):
+        print("debug> format:",format_method)
+elif(args.format == "Y"):
+    format_method = "Y"
+    if(debug == 1):
+        print("debug> format:",format_method)
+elif(args.format == "NONE"):
+    format_method = "NONE"
+    if(debug == 1):
+        print("debug> format:",format_method)
+else:
+    print("\nERROR: format invalid")
+    quit()
+
 #checksum
 if(args.hash):
     hash_mode = 1 
@@ -223,26 +234,14 @@ if(args.hash):
         print("\nERROR: checksum is not valid")
         quit()
 
-#format
-if(args.format == "YMD"):
-    format_method = "YMD"
-    if(debug == 1):
-        print("debug> format:",format_method)
-elif(args.format == "YM"):
-    format_method = "YM"
-    if(debug == 1):
-        print("debug> format:",format_method)
-elif(args.format == "Y"):
-    format_method = "Y"
-    if(debug == 1):
-        print("debug> format:",format_method)
-elif(args.format == "NONE"):
-    format_method = "NONE"
-    if(debug == 1):
-        print("debug> format:",format_method)
-else:
-    print("\nERROR: format invalid")
+#input hashfile
+if (args.hashfile == None):
+    print("\nERROR: input hash file was not configured")
     quit()
+else:
+    input_hash_file = args.hashfile
+    if (debug == 1):
+        print("debug> input hash file:",input_hash_file)
 
 def free_space_checker():
     global debug
