@@ -18,6 +18,7 @@ import toml
 checksum = ""
 checksum_command = ""
 debug = 0           #debug 
+format_method = ""
 input_path_size = 0 
 input_hash_file = ""
 input_path = ""
@@ -50,7 +51,7 @@ parser.add_argument("--output",help="Output path",default=None)
 #size(size)
 parser.add_argument("--size",
         help="Disc size:\n"
-        "\tDVD\t4.7GB\n"
+        "\tDVD\t4.7GB(default)\n"
         "\tDVD-DL\t9.4GB\n"
         "\tBL\t25GB\n"
         "\tBL-DL\t50GB\n"
@@ -69,10 +70,19 @@ parser.add_argument("--checksum",
             "\tmd5\n"
             "\tsha1\n"
             "\tsha224\n"
-            "\tsha256\n"
+            "\tsha256(default)\n"
             "\tsha384\n"
             "\tsha512\n"
             ,default="sha256")
+
+#format
+parser.add_argument("--format",
+        help="Output file format\n"
+        "\tYMD(default)\n"
+        "\tYM\n"
+        "\tY\n"
+        "\tNONE(default)\n"
+        ,default="NONE")
 
 #verbose(v)
 parser.add_argument("--verbose",help="Increase output verbosity",action="store_true")
@@ -193,6 +203,27 @@ else:
     print("\nERROR: checksum is not valid")
     quit()
 
+#format
+if(args.format == "YMD"):
+    format_method = "YMD"
+    if(debug == 1):
+        print("debug> format:",format)
+if(args.format == "YM"):
+    format_method = "YM"
+    if(debug == 1):
+        print("debug> format:",format)
+if(args.format == "Y"):
+    format_method = "Y"
+    if(debug == 1):
+        print("debug> format:",format)
+if(args.format == "NONE"):
+    format_method = "NONE"
+    if(debug == 1):
+        print("debug> format:",format)
+else:
+    print("\nERROR: format invalid")
+    quit()
+
 #verbose
 if (args.verbose):
     debug = 1
@@ -232,76 +263,99 @@ def file_sorter_photos():
     for file in os.listdir(input_path):
         if (debug == 1):
             print ("Input path:","\t",os.path.abspath(input_path))
-        print ("File:","\t","\t",file)
+        print ("File:","\t\t",file)
         image_path = os.path.join(input_path,file)
         if (debug == 1):
             print ("File path:","\t",image_path)
             print ("File size:","\t",os.path.getsize(image_path),"Bytes")
-        #Exif Parser    
-        with open(image_path,'rb') as image_file:
-            tags = exifread.process_file(image_file,details=False)
 
-            if (image_file == None):                        #Non Exif image parser format: yyyymmdd_hhmmss
-                image_filename = re.findall(r'\d+',file)    #Regex digit string parser
-                if (len(image_filename[0]) == 8):           #8 character check
-                    image_date_year = image_filename[0][0:4]
-                    image_date_month = image_filename[0][4:6]
-                    image_date_day = image_filename[0][6:8]
-            else:
-                image_date = tags.get('Image DateTime')
-                image_date_year = str(image_date)[0:4]
-                image_date_month = str(image_date)[5:7]
-                image_date_day = str(image_date)[8:10]
+        if(format_method == "YMD"):
+            #Exif Parser
+            with open(image_path,'rb') as image_file:
+                tags = exifread.process_file(image_file,details=False)
 
-            if (debug == 1):
-                print ("File date:","\t",image_date)
-                print ("File year:","\t",image_date_year) 
-                print ("File month:","\t",image_date_month)
-                print ("File day:","\t",image_date_day)
+                if (image_file == None):                        #Non Exif image parser format: yyyymmdd_hhmmss
+                    image_filename = re.findall(r'\d+',file)    #Regex digit string parser
+                    if (len(image_filename[0]) == 8):           #8 character check
+                        image_date_year = image_filename[0][0:4]
+                        image_date_month = image_filename[0][4:6]
+                        image_date_day = image_filename[0][6:8]
+                else:
+                    image_date = tags.get('Image DateTime')
+                    image_date_year = str(image_date)[0:4]
+                    image_date_month = str(image_date)[5:7]
+                    image_date_day = str(image_date)[8:10]
 
+                if (debug == 1):
+                    print ("File date:","\t",image_date)
+                    print ("File year:","\t",image_date_year) 
+                    print ("File month:","\t",image_date_month)
+                    print ("File day:","\t",image_date_day)
+
+                image_size = os.path.getsize(image_path)    #input image size
+
+                if (folder_size + image_size > size):     
+                    folder += 1
+                    folder_name = label + "_" + str(folder + 1).zfill(3)
+                    output_folder = os.path.relpath(folder_name)
+                    folder_size = 0
+
+                folder_name = label + "_" + str(folder).zfill(3)
+                output_folder = os.path.relpath(folder_name)
+
+                if not os.path.isdir(output_folder):
+                    os.mkdir(output_folder)
+                
+                image_file_year = os.path.join(output_folder,image_date_year)         
+                image_file_month = os.path.join(image_file_year,image_date_month)     
+                image_file_day = os.path.join(image_file_month,image_date_day)        
+                                                                                 
+                if not os.path.isdir(image_file_year):                               
+                    os.mkdir(image_file_year)                                        
+                if not os.path.isdir(image_file_month):                              
+                    os.mkdir(image_file_month)                                       
+                if not os.path.isdir(image_file_day):                                
+                    os.mkdir(image_file_day)
+                
+                if(debug == 1):                                                      
+                    print("\nOutput path variables:")                                
+                    print("image file year: ", image_file_year)                      
+                    print("image file month:", image_file_month)                     
+                    print("image file day:  ", image_file_day)
+                    
+                shutil.copy2(image_path,image_file_day)
+
+                folder_size += image_size
+                
+                output_image_path = os.path.join(image_file_day,file)
+                output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
+
+                output_hash_file = os.path.join(output_folder,'hashes.toml')
+                with open(output_hash_file,'a') as output_hashes:
+                    output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+        elif(format_method == "NONE"):
             image_size = os.path.getsize(image_path)    #input image size
 
             if (folder_size + image_size > size):     
                 folder += 1
                 folder_name = label + "_" + str(folder + 1).zfill(3)
-                #output_folder = os.path.join(output_path,folder_name)
                 output_folder = os.path.relpath(folder_name)
                 folder_size = 0
 
             folder_name = label + "_" + str(folder).zfill(3)
-            #output_folder = os.path.join(output_path,folder_name)
-            output_folder = os.path.relpath(folder_name)
+            output_folder = os.path.relpath(folder_name)                
 
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
-            
-            image_file_year = os.path.join(output_folder,image_date_year)         
-            image_file_month = os.path.join(image_file_year,image_date_month)     
-            image_file_day = os.path.join(image_file_month,image_date_day)        
-                                                                             
-            if not os.path.isdir(image_file_year):                               
-                os.mkdir(image_file_year)                                        
-            if not os.path.isdir(image_file_month):                              
-                os.mkdir(image_file_month)                                       
-            if not os.path.isdir(image_file_day):                                
-                os.mkdir(image_file_day)
-            
-            if(debug == 1):                                                      
-                print("\nOutput path variables:")                                
-                print("image file year: ", image_file_year)                      
-                print("image file month:", image_file_month)                     
-                print("image file day:  ", image_file_day)
-                
-            shutil.copy2(image_path,image_file_day)
 
+            shutil.copy2(image_path,output_folder)
+            
             folder_size += image_size
             
-            output_image_path = os.path.join(image_file_day,file)
-            output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
-
-            output_hash_file = os.path.join(output_folder,'hashes.toml')
-            with open(output_hash_file,'a') as output_hashes:
-                output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+            output_image_path = os.path.join(output_folder,file)
+            output_command = subprocess.run([checksum_command,output_image_path],capture_output=True,encoding='utf8')
+            with open(input_hash_file,'a') as hashes:
+                hashes.write(toml.dumps({file: output_command.stdout.strip()}))
     os.chdir(path)
 
 #Checksum of input photos
