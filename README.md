@@ -47,9 +47,9 @@ optional arguments:
   --size SIZE          Disc size:
                        	DVD	4.7GB(default)
                        	DVD-DL	9.4GB
-                       	BL	25GB
-                       	BL-DL	50GB
-                       	BL-QL	100GB
+                       	BD	25GB
+                       	BD-DL	50GB
+                       	BD-QL	100GB
   --custom CUSTOM      Custom size:
                        	(int)B
   --label LABEL        Set disc label prefix

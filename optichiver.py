@@ -52,9 +52,9 @@ parser.add_argument("--size",
         help="Disc size:\n"
         "\tDVD\t4.7GB(default)\n"
         "\tDVD-DL\t9.4GB\n"
-        "\tBL\t25GB\n"
-        "\tBL-DL\t50GB\n"
-        "\tBL-QL\t100GB\n"
+        "\tBD\t25GB\n"
+        "\tBD-DL\t50GB\n"
+        "\tBD-QL\t100GB\n"
         ,default="DVD",type=str)
 
 #custom(custom)
@@ -146,15 +146,15 @@ elif (args.size == "DVD-DL"):
     size = 9.4E9
     if(debug == 1):
         print("debug> disc size:",size)
-elif (args.size == "BL"):
+elif (args.size == "BD"):
     size = 25E9
     if(debug == 1):
         print("debug> disc size:",size)
-elif (args.size == "BL-DL"):
+elif (args.size == "BD-DL"):
     size = 5E10
     if(debug == 1):
         print("debug> disc size:",size)
-elif (args.size == "BL-QL"):
+elif (args.size == "BD-QL"):
     size = 1E11
     if(debug == 1):
         print("debug> disc size:",size)
