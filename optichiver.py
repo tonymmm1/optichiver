@@ -17,7 +17,7 @@ import toml
 #Empty Variable Declarations
 checksum = ""
 checksum_command = ""
-debug = 0           #debug 
+debug = 0        
 format_method = ""
 input_path_size = 0 
 input_hash_file = ""
@@ -78,10 +78,10 @@ parser.add_argument("--checksum",
 #format
 parser.add_argument("--format",
         help="Output file format\n"
-        "\tYMD(default)\n"
-        "\tYM\n"
-        "\tY\n"
-        "\tNONE(default)\n"
+        "\tYMD\t\t/label/year/month/dir/image.jpg\n"
+        "\tYM\t\t/label/year/month/image.jpg\n"
+        "\tY\t\t/label/year/image.jpg\n"
+        "\tNONE(default)\t/label/image.jpg\n"
         ,default="NONE")
 
 #verbose(v)
