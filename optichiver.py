@@ -4,13 +4,11 @@
 import argparse
 from argparse import RawTextHelpFormatter
 import exifread
-import hashlib
 import os
 import platform
 import re
 import shutil
 import subprocess
-import sys
 import threading
 import time
 import toml
@@ -18,6 +16,7 @@ import toml
 
 #Empty Variable Declarations
 checksum = ""
+checksum_command = ""
 debug = 0           #debug 
 input_path_size = 0 
 input_hash_file = ""
@@ -59,18 +58,21 @@ parser.add_argument("--size",
         ,default="DVD",type=str)
 
 #custom(custom)
-parser.add_argument("--custom",help="Custom disc size (int)B")
+parser.add_argument("--custom",
+        help="Custom size:\n" 
+        "\t(int)B\n",default=None)
 
 #checksum(checksum)
 parser.add_argument("--checksum",
         help="Checksum algorithm:\n"
+            "\tblake2\n"
             "\tmd5\n"
             "\tsha1\n"
             "\tsha224\n"
             "\tsha256\n"
             "\tsha384\n"
             "\tsha512\n"
-            ,default="md5",type=str)
+            ,default="sha256")
 
 #verify(verify)
 parser.add_argument("--verify",help="Verify checksums on output",action="store_true")
@@ -155,28 +157,39 @@ else:
     quit()
 
 #checksum
-if(args.checksum == "md5"):
-    checksum = hashlib.md5()
+if(args.checksum == "blake2"):
+    checksum = "blake2"
+    checksum_command = "b2sum"
+    if(debug == 1):
+        print("debug> checksum:",checksum)
+elif(args.checksum == "md5"):
+    checksum = "md5"
+    checksum_command = "md5sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 elif(args.checksum == "sha1"):
-    checksum = hashlib.sha1()
+    checksum = "sha1"
+    checksum_command = "sha1sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 elif(args.checksum == "sha224"):
-    checksum = hashlib.sha224()
+    checksum = "sha224"
+    checksum_command = "sha224sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 elif(args.checksum == "sha256"):
-    checksum = hashlib.sha256()
+    checksum = "sha256"
+    checksum_command = "sha256sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 elif(args.checksum == "sha384"):
-    checksum = hashlib.sha384()
+    checksum = "sha384"
+    checksum_command = "sha384sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 elif(args.checksum == "sha512"):
-    checksum = hashlib.sha512()
+    checksum = "sha512"
+    checksum_command = "sha512sum"
     if(debug == 1):
         print("debug> checksum:",checksum)
 else:
@@ -204,18 +217,21 @@ def free_space_checker():
         print ("input:  ",input_path,"used:", "\t",input_path_size, "\tBytes")
         print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
     if(output_free < input_path_size):
-        sys.exit("\nERROR: Insufficient Space")
+        print("\nERROR: Insufficient Space")
+        quit()
 
 def file_sorter_photos():
-    global checksum
+    global checksum_command
     global debug
     global input_path
     global label
     global output_path
+    global path
     global size
 
     folder_size = 0
     folder = 1
+    os.chdir(output_path)
     for file in os.listdir(input_path):
         if (debug == 1):
             print ("Input path:","\t",os.path.abspath(input_path))
@@ -251,11 +267,13 @@ def file_sorter_photos():
             if (folder_size + image_size > size):     
                 folder += 1
                 folder_name = label + "_" + str(folder + 1).zfill(3)
-                output_folder = os.path.join(output_path,folder_name)
+                #output_folder = os.path.join(output_path,folder_name)
+                output_folder = os.path.relpath(folder_name)
                 folder_size = 0
 
             folder_name = label + "_" + str(folder).zfill(3)
-            output_folder = os.path.join(output_path,folder_name)
+            #output_folder = os.path.join(output_path,folder_name)
+            output_folder = os.path.relpath(folder_name)
 
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
@@ -277,71 +295,75 @@ def file_sorter_photos():
                 print("image file month:", image_file_month)                     
                 print("image file day:  ", image_file_day)
                 
-            shutil.copy(image_path,image_file_day,follow_symlinks=False)
+            shutil.copy2(image_path,image_file_day)
 
             folder_size += image_size
-            hash_data = image_file.read()
-            checksum.update(hash_data)
+            
+            output_image_path = os.path.join(image_file_day,file)
+            output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
+
             output_hash_file = os.path.join(output_folder,'hashes.toml')
-            with open(output_hash_file,'a') as hashes:
-                hashes.write(toml.dumps({file: checksum.hexdigest()}))
+            with open(output_hash_file,'a') as output_hashes:
+                output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+    os.chdir(path)
 
 #verifies input_hash_file with specified path(created iso/udf file and or burnt disc)
-def verify_output(verify_path):
-    global checksum
-    global debug
-    global input_hash_file
-    global output_path
-    
-    verify_path = output_path   #default value is output_path
-    verify_hash_file = os.path.join(verify_path,"verify_hash_file.toml")
-    
-    if os.path.exists(input_hash_file) and os.path.exists(output_path):
-        if not os.path.exists(verify_path):
-            os.mkdir(verify_path)
-            if(debug == 1):
-                print("debug> os.mkdir(verify_path)")
-        if (debug == 1):
-            print("debug> os.listdir(verify_path)")
-        if not os.path.exists(input_hash_file):
-            for path,dirs,files in os.walk(verify_path):
-                for file in files:
-                    verify_image = os.path.join(verify_path,file)
-                    with open (verify_image,'rb') as hash:
-                        hash_data = hash.read()
-                        checksum.update(hash_data)
-                        with open(verify_hash_file,'a') as hashes:
-                            hashes.write(toml.dumps({file: checksum.hexdigest()}))
-                        if (debug == 1):
-                            print("debug> file hash",file,":",checksum.hexdigest())
-        else:
-            print("\nERROR: verification hash file exists")
-            quit()
-    else:
-        print("\nERROR: output path or input hash file do not exist")
-        quit()
+#def verify_output(verify_path):
+#    global checksum
+#    global debug
+#    global input_hash_file
+#    global output_path
+#    
+#    verify_path = output_path   #default value is output_path
+#    verify_hash_file = os.path.join(verify_path,"verify_hash_file.toml")
+#    
+#    if os.path.exists(input_hash_file) and os.path.exists(output_path):
+#        if not os.path.exists(verify_path):
+#            os.mkdir(verify_path)
+#            if(debug == 1):
+#                print("debug> os.mkdir(verify_path)")
+#        if (debug == 1):
+#            print("debug> os.listdir(verify_path)")
+#        if not os.path.exists(verify_hash_file):
+#            for path,dirs,files in os.walk(verify_path):
+#                for file in files:
+#                    verify_image = os.path.join(verify_path,file)
+#                    with open (verify_image,'rb') as hash:
+#                        hash_data = hash.read()
+#                        checksum.update(hash_data)
+#                        with open(verify_hash_file,'a') as hashes:
+#                            hashes.write(toml.dumps({file: checksum.hexdigest()}))
+#                        if (debug == 1):
+#                            print("debug> file hash",file,":",checksum.hexdigest())
+#        else:
+#            print("\nERROR: verification hash file exists")
+#            quit()
+#    else:
+#        print("\nERROR: output path or input hash file do not exist")
+#        quit()
 
 #Checksum of input photos
 def input_checksum_photos():
-    global checksum
+    global checksum_command
     global debug
     global input_hash_file
     global input_path
-
+    
     if not os.path.exists(input_hash_file):
         print ("\nInput Checksum Thread:")
-        for path,dirs,files in os.walk(input_path):
-            for file in files:
-                input_image = os.path.join(input_path,file)
-                with open (input_image,'rb') as hash:
-                    hash_data = hash.read()
-                    checksum.update(hash_data)
-                    with open(input_hash_file,'a') as hashes:
-                        hashes.write(toml.dumps({file: checksum.hexdigest()}))
+        for file in os.listdir(input_path):
+            image_path = os.path.join(input_path,file)
+            input_command = subprocess.run([checksum_command,image_path],capture_output=True,encoding='utf8')
+            with open(input_hash_file,'a') as hashes:
+                hashes.write(toml.dumps({file: input_command.stdout.strip()}))
+    print("Input Checksum Thread complete")
 
 free_space_checker()
 if __name__ == "__main__":
-    input_checksum_thread = threading.Thread(target=input_checksum_photos, args=())
+    input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
     input_checksum_thread.start()
+    input_checksum_thread.join()
 file_sorter_photos()
-verify_output(output_path)
+#verify_output(output_path)
+
+print("\nScript complete in",round(time.time()-start,3),'seconds')
