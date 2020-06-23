@@ -19,19 +19,21 @@ checksum = ""
 checksum_command = ""
 debug = 0        
 format_method = ""
+hash_mode = 0
 input_path_size = 0 
 input_hash_file = ""
 input_path = ""
 label = ""
 output_path = ""
 size = 0
+skipcheck = 0
 
 #Static Variable Declarations
 date = time.strftime('%Y-%m-%d_%T') #Date variable
 path = os.getcwd()
 start = time.time()
 
-print ("Optichiver: Script for backing up to optical discs")
+print ("Optichiver: Script for backing up to optical discs\n")
 
 #Argument parsing
 parser = argparse.ArgumentParser(description="Optichiver cli", formatter_class=RawTextHelpFormatter)
@@ -48,6 +50,9 @@ parser.add_argument("--label",help="Set disc label prefix",default="disc")
 #output path(output)
 parser.add_argument("--output",help="Output path",default=None)
 
+#skip file check
+parser.add_argument("--skipcheck",help="Skip system file check",action="store_true")
+
 #size(size)
 parser.add_argument("--size",
         help="Disc size:\n"
@@ -62,6 +67,9 @@ parser.add_argument("--size",
 parser.add_argument("--custom",
         help="Custom size:\n" 
         "\t(int)B\n",default=None)
+
+#hash
+parser.add_argument("--hash",help="Enable hashing",action="store_true")
 
 #checksum(checksum)
 parser.add_argument("--checksum",
@@ -89,13 +97,17 @@ parser.add_argument("--verbose",help="Increase output verbosity",action="store_t
 
 args = parser.parse_args()
 
+#verbose
+if (args.verbose):
+    debug = 1
+    print("debug> Output verbosity on")
+
 #input
 if (args.input == None):
     print("\nERROR: input path was not configured")
     quit()
 else:
     input_path = args.input
-    print(input_path)
     if not (os.path.isdir(input_path)):
         print("\nERROR: input path is not valid")
         quit()
@@ -127,7 +139,13 @@ else:
         print("\nERROR: output path is not valid")
         quit()
     if (debug == 1):                               
-        print("debug> output path:",output_path)     
+        print("debug> output path:",output_path)
+
+#skipcheck
+if (args.skipcheck):
+    skipcheck = 1
+    if(debug == 1):
+        print("debug> skipcheck:",skipcheck)
 
 #size
 if (args.size == "DVD"):
@@ -164,70 +182,67 @@ else:
     quit()
 
 #checksum
-if(args.checksum == "blake2"):
-    checksum = "blake2"
-    checksum_command = "b2sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "md5"):
-    checksum = "md5"
-    checksum_command = "md5sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "sha1"):
-    checksum = "sha1"
-    checksum_command = "sha1sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "sha224"):
-    checksum = "sha224"
-    checksum_command = "sha224sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "sha256"):
-    checksum = "sha256"
-    checksum_command = "sha256sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "sha384"):
-    checksum = "sha384"
-    checksum_command = "sha384sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-elif(args.checksum == "sha512"):
-    checksum = "sha512"
-    checksum_command = "sha512sum"
-    if(debug == 1):
-        print("debug> checksum:",checksum)
-else:
-    print("\nERROR: checksum is not valid")
-    quit()
+if(args.hash):
+    hash_mode = 1 
+    if(args.checksum == "blake2"):
+        checksum = "blake2"
+        checksum_command = "b2sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "md5"):
+        checksum = "md5"
+        checksum_command = "md5sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "sha1"):
+        checksum = "sha1"
+        checksum_command = "sha1sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "sha224"):
+        checksum = "sha224"
+        checksum_command = "sha224sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "sha256"):
+        checksum = "sha256"
+        checksum_command = "sha256sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "sha384"):
+        checksum = "sha384"
+        checksum_command = "sha384sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    elif(args.checksum == "sha512"):
+        checksum = "sha512"
+        checksum_command = "sha512sum"
+        if(debug == 1):
+            print("debug> checksum:",checksum)
+    else:
+        print("\nERROR: checksum is not valid")
+        quit()
 
 #format
 if(args.format == "YMD"):
     format_method = "YMD"
     if(debug == 1):
-        print("debug> format:",format)
+        print("debug> format:",format_method)
 elif(args.format == "YM"):
     format_method = "YM"
     if(debug == 1):
-        print("debug> format:",format)
+        print("debug> format:",format_method)
 elif(args.format == "Y"):
     format_method = "Y"
     if(debug == 1):
-        print("debug> format:",format)
+        print("debug> format:",format_method)
 elif(args.format == "NONE"):
     format_method = "NONE"
     if(debug == 1):
-        print("debug> format:",format)
+        print("debug> format:",format_method)
 else:
     print("\nERROR: format invalid")
     quit()
-
-#verbose
-if (args.verbose):
-    debug = 1
-    print("debug> Output verbosity on")
 
 def free_space_checker():
     global debug
@@ -239,11 +254,10 @@ def free_space_checker():
         for f in files:
             fp = os.path.join(path,f)
             input_path_size += os.path.getsize(fp)
-    print (input_path_size)
     output_free = int(os.statvfs(output_path)[1] * os.statvfs(output_path)[7])
     if(debug == 1):
-        print ("input:  ",input_path,"used:", "\t",input_path_size, "\tBytes")
-        print ("output: ",output_path,"free:","\t",output_free, "\tBytes")
+        print ("debug> input:  ",input_path,"used:", "\t",input_path_size, "\tBytes")
+        print ("debug> output: ",output_path,"free:","\t",output_free, "\tBytes")
     if(output_free < input_path_size):
         print("\nERROR: Insufficient Space")
         quit()
@@ -252,6 +266,7 @@ def file_sorter_photos():
     global checksum_command
     global debug
     global input_path
+    global hash_mode
     global label
     global output_path
     global path
@@ -327,13 +342,13 @@ def file_sorter_photos():
                 shutil.copy2(image_path,image_file_day)
 
                 folder_size += image_size
-                
-                output_image_path = os.path.join(image_file_day,file)
-                output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
+                if (hash_mode == 1): 
+                    output_image_path = os.path.join(image_file_day,file)
+                    output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
-                output_hash_file = os.path.join(output_folder,'hashes.toml')
-                with open(output_hash_file,'a') as output_hashes:
-                    output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+                    output_hash_file = os.path.join(output_folder,'hashes.toml')
+                    with open(output_hash_file,'a') as output_hashes:
+                        output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
 
         #format YM
         elif(format_method == "YM"):
@@ -387,12 +402,13 @@ def file_sorter_photos():
 
                 folder_size += image_size
                 
-                output_image_path = os.path.join(image_file_month,file)
-                output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
+                if (hash_mode == 1):
+                    output_image_path = os.path.join(image_file_month,file)
+                    output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
-                output_hash_file = os.path.join(output_folder,'hashes.toml')
-                with open(output_hash_file,'a') as output_hashes:
-                    output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+                    output_hash_file = os.path.join(output_folder,'hashes.toml')
+                    with open(output_hash_file,'a') as output_hashes:
+                        output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
 
         #format Y
         elif(format_method == "Y"):
@@ -438,13 +454,14 @@ def file_sorter_photos():
                 shutil.copy2(image_path,image_file_year)
 
                 folder_size += image_size
-                
-                output_image_path = os.path.join(image_file_year,file)
-                output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
-                output_hash_file = os.path.join(output_folder,'hashes.toml')
-                with open(output_hash_file,'a') as output_hashes:
-                    output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+                if (hash_mode == 1):
+                    output_image_path = os.path.join(image_file_year,file)
+                    output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
+
+                    output_hash_file = os.path.join(output_folder,'hashes.toml')
+                    with open(output_hash_file,'a') as output_hashes:
+                        output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
 
         #format NONE
         elif(format_method == "NONE"):
@@ -466,10 +483,11 @@ def file_sorter_photos():
             
             folder_size += image_size
             
-            output_image_path = os.path.join(output_folder,file)
-            output_command = subprocess.run([checksum_command,output_image_path],capture_output=True,encoding='utf8')
-            with open(input_hash_file,'a') as hashes:
-                hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+            if (hash_mode == 1):
+                output_image_path = os.path.join(output_folder,file)
+                output_command = subprocess.run([checksum_command,output_image_path],capture_output=True,encoding='utf8')
+                with open(input_hash_file,'a') as hashes:
+                    hashes.write(toml.dumps({file: output_command.stdout.strip()}))
     os.chdir(path)
 
 #Checksum of input photos
@@ -488,11 +506,13 @@ def input_checksum_photos():
                 hashes.write(toml.dumps({file: input_command.stdout.strip()}))
     print("Input Checksum Thread complete")
 
-free_space_checker()
+if not (skipcheck == 1):
+    free_space_checker()
 if __name__ == "__main__":
-    input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
-    input_checksum_thread.start()
-    input_checksum_thread.join()
+    if(hash_mode == 1):
+        input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
+        input_checksum_thread.start()
+        input_checksum_thread.join()
 file_sorter_photos()
 
 print("\nScript complete in",round(time.time()-start,3),'seconds')
