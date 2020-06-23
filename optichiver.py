@@ -74,9 +74,6 @@ parser.add_argument("--checksum",
             "\tsha512\n"
             ,default="sha256")
 
-#verify(verify)
-parser.add_argument("--verify",help="Verify checksums on output",action="store_true")
-
 #verbose(v)
 parser.add_argument("--verbose",help="Increase output verbosity",action="store_true")
 
@@ -307,41 +304,6 @@ def file_sorter_photos():
                 output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
     os.chdir(path)
 
-#verifies input_hash_file with specified path(created iso/udf file and or burnt disc)
-#def verify_output(verify_path):
-#    global checksum
-#    global debug
-#    global input_hash_file
-#    global output_path
-#    
-#    verify_path = output_path   #default value is output_path
-#    verify_hash_file = os.path.join(verify_path,"verify_hash_file.toml")
-#    
-#    if os.path.exists(input_hash_file) and os.path.exists(output_path):
-#        if not os.path.exists(verify_path):
-#            os.mkdir(verify_path)
-#            if(debug == 1):
-#                print("debug> os.mkdir(verify_path)")
-#        if (debug == 1):
-#            print("debug> os.listdir(verify_path)")
-#        if not os.path.exists(verify_hash_file):
-#            for path,dirs,files in os.walk(verify_path):
-#                for file in files:
-#                    verify_image = os.path.join(verify_path,file)
-#                    with open (verify_image,'rb') as hash:
-#                        hash_data = hash.read()
-#                        checksum.update(hash_data)
-#                        with open(verify_hash_file,'a') as hashes:
-#                            hashes.write(toml.dumps({file: checksum.hexdigest()}))
-#                        if (debug == 1):
-#                            print("debug> file hash",file,":",checksum.hexdigest())
-#        else:
-#            print("\nERROR: verification hash file exists")
-#            quit()
-#    else:
-#        print("\nERROR: output path or input hash file do not exist")
-#        quit()
-
 #Checksum of input photos
 def input_checksum_photos():
     global checksum_command
@@ -364,6 +326,5 @@ if __name__ == "__main__":
     input_checksum_thread.start()
     input_checksum_thread.join()
 file_sorter_photos()
-#verify_output(output_path)
 
 print("\nScript complete in",round(time.time()-start,3),'seconds')
