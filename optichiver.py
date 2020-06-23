@@ -138,32 +138,33 @@ if (args.skipcheck):
         print("debug> skipcheck:",skipcheck)
 
 #size
-if (args.size == "DVD"):
-    size = 4.7E9
-    if(debug == 1):
-        print("debug> disc size:",size)
-elif (args.size == "DVD-DL"):
-    size = 9.4E9
-    if(debug == 1):
-        print("debug> disc size:",size)
-elif (args.size == "BD"):
-    size = 25E9
-    if(debug == 1):
-        print("debug> disc size:",size)
-elif (args.size == "BD-DL"):
-    size = 5E10
-    if(debug == 1):
-        print("debug> disc size:",size)
-elif (args.size == "BD-QL"):
-    size = 1E11
-    if(debug == 1):
-        print("debug> disc size:",size)
-else:
-    print("\nERROR: disc size is not valid")
-    quit()
+if not (args.custom):
+    if (args.size == "DVD"):
+        size = 4.7E9
+        if(debug == 1):
+            print("debug> disc size:",size)
+    elif (args.size == "DVD-DL"):
+        size = 9.4E9
+        if(debug == 1):
+            print("debug> disc size:",size)
+    elif (args.size == "BD"):
+        size = 25E9
+        if(debug == 1):
+            print("debug> disc size:",size)
+    elif (args.size == "BD-DL"):
+        size = 5E10
+        if(debug == 1):
+            print("debug> disc size:",size)
+    elif (args.size == "BD-QL"):
+        size = 1E11
+        if(debug == 1):
+            print("debug> disc size:",size)
+    else:
+        print("\nERROR: disc size is not valid")
+        quit()
 
 #custom
-if (args.custom):
+elif (args.custom):
     size = int(args.custom)
     if(debug == 1):
         print("debug> disc size:",size)
