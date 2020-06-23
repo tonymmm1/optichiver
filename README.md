@@ -1,4 +1,4 @@
-#Release: 0.1.0
+# Release: 0.1.0
 ## Optichiver
 
 Python script for splitting image files into separate directories according to specified disc size and hashes files.
