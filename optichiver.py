@@ -482,12 +482,14 @@ def file_sorter_photos():
             shutil.copy2(image_path,output_folder)
             
             folder_size += image_size
-            
+
             if (hash_mode == 1):
-                output_image_path = os.path.join(output_folder,file)
+                output_image_path = os.path.join(output_folder,file) 
                 output_command = subprocess.run([checksum_command,output_image_path],capture_output=True,encoding='utf8')
-                with open(input_hash_file,'a') as hashes:
-                    hashes.write(toml.dumps({file: output_command.stdout.strip()}))
+                
+                output_hash_file = os.path.join(output_folder,'hashes.toml')
+                with open(output_hash_file,'a') as output_hashes:
+                    output_hashes.write(toml.dumps({file: output_command.stdout.strip()}))
     os.chdir(path)
 
 #Checksum of input photos
@@ -504,15 +506,13 @@ def input_checksum_photos():
             input_command = subprocess.run([checksum_command,image_path],capture_output=True,encoding='utf8')
             with open(input_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: input_command.stdout.strip()}))
-    print("Input Checksum Thread complete")
 
 if not (skipcheck == 1):
     free_space_checker()
-if __name__ == "__main__":
-    if(hash_mode == 1):
-        input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
-        input_checksum_thread.start()
-        input_checksum_thread.join()
+if (hash_mode == 1):
+    if __name__ == "__main__":
+            input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
+            input_checksum_thread.start()
 file_sorter_photos()
 
 print("\nScript complete in",round(time.time()-start,3),'seconds')
