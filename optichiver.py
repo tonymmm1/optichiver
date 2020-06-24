@@ -15,23 +15,23 @@ import toml
 
 
 #Empty Variable Declarations
-checksum = ""
-checksum_command = ""
-debug = 0        
-format_method = ""
-hash_mode = 0
-input_path_size = 0 
-input_hash_file = ""
-input_path = ""
-label = ""
-output_path = ""
-size = 0
-skipcheck = 0
+checksum = ""           #checksum type
+checksum_command = ""   #checksum type command
+debug = 0               #debug state
+format_method = ""      #format method
+hash_mode = 0           #hash type
+input_path_size = 0     #input path size
+input_hash_file = ""    #input hash file
+input_path = ""         #input path
+label = ""              #label
+output_path = ""        #output path
+size = 0                #size
+skipcheck = 0           #skip check
 
 #Static Variable Declarations
-date = time.strftime('%Y-%m-%d_%T') #Date variable
-path = os.getcwd()
-start = time.time()
+date = time.strftime('%Y-%m-%d_%T') #Date format 
+path = os.getcwd()                  #Working directory
+start = time.time()                 #Start time
 
 print ("Optichiver: Script for backing up to optical discs\n")
 
@@ -65,7 +65,7 @@ parser.add_argument("--custom",
 #label(label)
 parser.add_argument("--label",help="Set disc label prefix",default="disc")
 
-#format
+#format(format)
 parser.add_argument("--format",
         help="Output file format\n"
         "\tYMD\t\t/label/year/month/dir/image.jpg\n"
@@ -73,7 +73,7 @@ parser.add_argument("--format",
         "\tY\t\t/label/year/image.jpg\n"
         "\tNONE(default)\t/label/image.jpg\n"
         ,default="NONE")
-#hash
+#hash(hash)
 parser.add_argument("--hash",help="Enable hashing",action="store_true")
 
 #checksum(checksum)
@@ -244,6 +244,7 @@ else:
     if (debug == 1):
         print("debug> input hash file:",input_hash_file)
 
+#Checks for free space on output path
 def free_space_checker():
     global debug
     global input_path
@@ -262,6 +263,7 @@ def free_space_checker():
         print("\nERROR: Insufficient Space")
         quit()
 
+#Parses images and outputs to directory based on file type
 def file_sorter_photos():
     global checksum_command
     global debug
@@ -344,6 +346,7 @@ def file_sorter_photos():
                 folder_size += image_size
                 if (hash_mode == 1): 
                     output_image_path = os.path.join(image_file_day,file)
+                    #checksum_command output_image_path(sha256sum /output/photo.img)
                     output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
                     output_hash_file = os.path.join(output_folder,'hashes.toml')
@@ -404,6 +407,7 @@ def file_sorter_photos():
                 
                 if (hash_mode == 1):
                     output_image_path = os.path.join(image_file_month,file)
+                    #checksum_command output_image_path(sha256sum /output/photo.img)
                     output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
                     output_hash_file = os.path.join(output_folder,'hashes.toml')
@@ -457,6 +461,7 @@ def file_sorter_photos():
 
                 if (hash_mode == 1):
                     output_image_path = os.path.join(image_file_year,file)
+                    #checksum_command output_image_path(sha256sum /output/photo.img)
                     output_command = subprocess.run([checksum_command,output_image_path],check=True,capture_output=True,encoding='utf8')
 
                     output_hash_file = os.path.join(output_folder,'hashes.toml')
@@ -478,13 +483,14 @@ def file_sorter_photos():
 
             if not os.path.isdir(output_folder):
                 os.mkdir(output_folder)
-
+            
             shutil.copy2(image_path,output_folder)
             
             folder_size += image_size
 
             if (hash_mode == 1):
                 output_image_path = os.path.join(output_folder,file) 
+                #checksum_command output_image_path(sha256sum /output/photo.img)
                 output_command = subprocess.run([checksum_command,output_image_path],capture_output=True,encoding='utf8')
                 
                 output_hash_file = os.path.join(output_folder,'hashes.toml')
@@ -507,12 +513,17 @@ def input_checksum_photos():
             with open(input_hash_file,'a') as hashes:
                 hashes.write(toml.dumps({file: input_command.stdout.strip()}))
 
+#Run free_space_checker if skipcheck is not toggled
 if not (skipcheck == 1):
     free_space_checker()
+
+#Run input_checksum_photos thread if hash is toggled
 if (hash_mode == 1):
     if __name__ == "__main__":
             input_checksum_thread= threading.Thread(target=input_checksum_photos, args=())
             input_checksum_thread.start()
+
+#Run file_sorter_photos
 file_sorter_photos()
 
 print("\nScript complete in",round(time.time()-start,3),'seconds')
